@@ -103,7 +103,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private void updateGridColumns() {
         grid.removeAllColumns();
 
-        grid.addColumn(item -> spreadsheet.getRows().indexOf(item)).setHeader("No.");
+        grid.addColumn(item -> spreadsheet.getRows().indexOf(item)).setHeader("No.")
+                .setFrozen(true);
 
         for (int i = 0; i < spreadsheet.getColumnCount(); i++) {
             final int columnIndex = i; // Capture column index for lambda
