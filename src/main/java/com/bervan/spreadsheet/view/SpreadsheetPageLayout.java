@@ -1,7 +1,6 @@
 package com.bervan.spreadsheet.view;
 
 import com.bervan.common.AbstractPageLayout;
-import com.vaadin.flow.component.html.Hr;
 
 public class SpreadsheetPageLayout extends AbstractPageLayout {
     public SpreadsheetPageLayout(boolean isEdit, String spreadsheetName) {
@@ -13,6 +12,5 @@ public class SpreadsheetPageLayout extends AbstractPageLayout {
         }
 
         add(menuButtonsRow);
-        add(new Hr());
     }
 }

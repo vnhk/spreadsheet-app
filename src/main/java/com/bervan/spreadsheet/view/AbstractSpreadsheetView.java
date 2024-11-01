@@ -1,8 +1,5 @@
 package com.bervan.spreadsheet.view;
 
-import com.bervan.spreadsheet.model.TextFieldCell;
-import com.bervan.spreadsheet.service.SpreadsheetRowConverter;
-import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.bervan.common.AbstractPageView;
 import com.bervan.core.model.BervanLogger;
 import com.bervan.spreadsheet.functions.DivisionFunction;
@@ -12,6 +9,9 @@ import com.bervan.spreadsheet.functions.SumFunction;
 import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
+import com.bervan.spreadsheet.model.TextFieldCell;
+import com.bervan.spreadsheet.service.SpreadsheetRowConverter;
+import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
@@ -32,6 +32,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private String selectedColumn;
     private final SpreadsheetService service;
+    private static final int MAX_RECURSION_DEPTH = 100;
 
     @Override
     public void setParameter(BeforeEvent beforeEvent, String s) {
@@ -131,9 +132,17 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                                 grid.getDataProvider().refreshItem(row);
                             }
 
-                            if (reloadRelated(row.number, columnIndex)) {
-                                grid.getDataProvider().refreshItem(row);
+                            try {
+
+                                if (reloadRelated(row.number, columnIndex)) {
+                                    grid.getDataProvider().refreshItem(row);
+                                }
+                            } catch (Exception ex) {
+                                cell.function = "ERROR";
+                                cell.value = "ERROR";
+                                cell.isFunction = false;
                             }
+
                         });
                         return cellField;
                     }))
@@ -161,20 +170,29 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private boolean reloadRelated(int number, int columnIndex) {
+        return reloadRelated(number, columnIndex, 0);
+    }
+
+    private boolean reloadRelated(int number, int columnIndex, int recursionDepth) {
+        if (recursionDepth > MAX_RECURSION_DEPTH) {
+            showErrorNotification("Maximum function depth reached. Stopping further recursion. Fix functions.");
+            throw new RuntimeException("Maximum function depth reached. Stopping further recursion. Fix functions.");
+        }
+
         for (SpreadsheetRow row : spreadsheet.getRows()) {
             List<Cell> cells = row.getCells();
             for (Cell cell : cells) {
-                Optional<String> relatedColumn = cell.relatedCells.stream().filter(e -> e.equals(getColumnHeader(columnIndex) + number))
+                Optional<String> relatedColumn = cell.relatedCells.stream()
+                        .filter(e -> e.equals(getColumnHeader(columnIndex) + number))
                         .findAny();
+
                 if (relatedColumn.isPresent()) {
                     calculateFunctionValue(cell);
                     int cellRowIndex = extractRowIndex(cell.cellId);
                     int cellColumnIndex = getColumnIndex(cell.cellId.replace(String.valueOf(cellRowIndex), ""));
                     grid.getDataProvider().refreshItem(row);
 
-                    //if function value is used in another function
-                    reloadRelated(cellRowIndex, cellColumnIndex);
-                    return true;
+                    return reloadRelated(cellRowIndex, cellColumnIndex, recursionDepth + 1);
                 }
             }
         }
