@@ -192,7 +192,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                     int cellColumnIndex = getColumnIndex(cell.cellId.replace(String.valueOf(cellRowIndex), ""));
                     grid.getDataProvider().refreshItem(row);
 
-                    return reloadRelated(cellRowIndex, cellColumnIndex, recursionDepth + 1);
+                    reloadRelated(cellRowIndex, cellColumnIndex, recursionDepth + 1);
                 }
             }
         }
