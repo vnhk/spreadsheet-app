@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cell {
+    public String columnSymbol;
+    public Integer columnNumber;
+    public Integer rowNumber;
     public String cellId;
     //displayValue
     public String value;
@@ -25,6 +28,9 @@ public class Cell {
     Cell(String value, int columnNumber, int rowNumber) {
         this.value = value;
         this.cellId = getColumnHeader(columnNumber) + rowNumber;
+        this.columnSymbol = getColumnHeader(columnNumber);
+        this.columnNumber = columnNumber;
+        this.rowNumber = rowNumber;
 
         if (value.startsWith("=")) {
             functionValue = value;
