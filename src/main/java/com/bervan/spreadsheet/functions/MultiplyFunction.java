@@ -1,6 +1,7 @@
 package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.SpreadsheetRow;
+import org.apache.commons.math3.exception.NotANumberException;
 
 import java.util.List;
 
@@ -12,7 +13,11 @@ public class MultiplyFunction implements SpreadsheetFunction {
 
             double res = 1;
             for (int i = 0; i < params.size(); i++) {
-                res *= getDouble(params, i);
+                try {
+                    res *= getDouble(params, i);
+                } catch (NotANumberException e) {
+                    //we ignore it, because we want to make this function working for empty values
+                }
             }
             return String.valueOf(res);
         } catch (Exception e) {

@@ -2,6 +2,7 @@ package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
+import org.apache.commons.math3.exception.NotANumberException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,6 +64,8 @@ public interface SpreadsheetFunction {
         double val;
         if (param instanceof Cell) {
             val = Double.parseDouble(((Cell) param).value);
+        } else if (param instanceof String || param == null) {
+            throw new NotANumberException();
         } else {
             val = Double.parseDouble(String.valueOf(param));
         }
