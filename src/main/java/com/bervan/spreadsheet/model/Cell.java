@@ -3,6 +3,9 @@ package com.bervan.spreadsheet.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnHeader;
+import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnIndex;
+
 public class Cell {
     public String columnSymbol;
     public Integer columnNumber;
@@ -16,19 +19,11 @@ public class Cell {
     public boolean isFunction;
     public List<String> relatedCells = new ArrayList<>();
 
-    private String getColumnHeader(int columnIndex) {
-        StringBuilder label = new StringBuilder();
-        while (columnIndex >= 0) {
-            label.insert(0, (char) ('A' + (columnIndex % 26)));
-            columnIndex = columnIndex / 26 - 1;
-        }
-        return label.toString();
-    }
-
     Cell(String value, int columnNumber, int rowNumber) {
-        if (value != null) {
-            this.value = value;
+        if (value == null) {
+            value = "";
         }
+        this.value = value;
         this.cellId = getColumnHeader(columnNumber) + rowNumber;
         this.columnSymbol = getColumnHeader(columnNumber);
         this.columnNumber = columnNumber;
@@ -121,16 +116,4 @@ public class Cell {
 
         return result;
     }
-
-
-    // Method to convert column header (like "A", "B", ..., "AA") to an index
-    private int getColumnIndex(String columnHeader) {
-        int index = 0;
-        for (int i = 0; i < columnHeader.length(); i++) {
-            index = index * 26 + (columnHeader.charAt(i) - 'A' + 1);
-        }
-        return index - 1;
-    }
-
-
 }
