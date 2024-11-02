@@ -304,8 +304,20 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         String[] colonSeparated = rows.split(":");
         if (colonSeparated.length == 2) {
             try {
-                final Integer start = Integer.parseInt(colonSeparated[0].replaceAll(".*?(\\d+)$", "$1"));
-                final Integer end = Integer.parseInt(colonSeparated[1].replaceAll(".*?(\\d+)$", "$1"));
+                Integer start = Integer.parseInt(colonSeparated[0].replaceAll(".*?(\\d+)$", "$1"));
+                Integer end = Integer.parseInt(colonSeparated[1].replaceAll(".*?(\\d+)$", "$1"));
+
+                if (start < 0) {
+                    start = 0;
+                }
+
+                if (end > spreadsheet.getRows().size() - 1) {
+                    end = spreadsheet.getRows().size() - 1;
+                }
+
+                if (start > end) {
+                    throw new RuntimeException("Incorrect rows");
+                }
 
                 List<SpreadsheetRow> allRows = spreadsheet.getRows();
                 List<SpreadsheetRow> targetRows = new ArrayList<>();
@@ -318,12 +330,21 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                     }
                 }
 
-                // Sort the target rows based on the value in the sortColumn
                 Comparator<SpreadsheetRow> comparator = Comparator.comparing(row -> {
                     Cell sortCell = row.getCell(getColumnIndex(sortColumn));
-                    return Integer.parseInt(sortCell != null ? sortCell.value : "0");
+                    String cellValue = sortCell != null ? sortCell.value : null;
+
+                    // If cellValue is null or non-integer, treat it as greater than any integer value
+                    if (cellValue == null || !isInteger(cellValue)) {
+                        if ("Descending".equalsIgnoreCase(order)) {
+                            return Integer.MAX_VALUE * -1;
+                        }
+                        return Integer.MAX_VALUE; // Push null or non-integer values to the end
+                    }
+                    return Integer.parseInt(cellValue);
                 });
 
+                // Reverse the comparator if the order is "Descending"
                 if ("Descending".equalsIgnoreCase(order)) {
                     comparator = comparator.reversed();
                 }
@@ -362,12 +383,22 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 showSuccessNotification("Sort applied!");
                 dialog.close();
             } catch (Exception e) {
+                e.printStackTrace();
                 showErrorNotification("An error occurred while sorting: " + e.getMessage());
             }
         } else {
             showErrorNotification("Invalid sort configuration!");
         }
 
+    }
+
+    private boolean isInteger(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private void saveChanges() {

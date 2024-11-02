@@ -9,7 +9,7 @@ public class Cell {
     public Integer rowNumber;
     public String cellId;
     //displayValue
-    public String value;
+    public String value = "";
     //internalValueIfFunction to be visible on click
     public String functionValue;
     public String function;
@@ -26,7 +26,9 @@ public class Cell {
     }
 
     Cell(String value, int columnNumber, int rowNumber) {
-        this.value = value;
+        if (value != null) {
+            this.value = value;
+        }
         this.cellId = getColumnHeader(columnNumber) + rowNumber;
         this.columnSymbol = getColumnHeader(columnNumber);
         this.columnNumber = columnNumber;
