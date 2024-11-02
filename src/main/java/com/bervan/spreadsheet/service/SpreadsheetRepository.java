@@ -7,5 +7,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface SpreadsheetRepository extends BaseRepository<Spreadsheet, UUID> {
-    Optional<Spreadsheet> findByName(String name);
+    Optional<Spreadsheet> findByNameAndDeletedFalse(String name);
 }

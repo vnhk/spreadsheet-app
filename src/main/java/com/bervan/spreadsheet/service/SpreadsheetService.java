@@ -39,6 +39,6 @@ public class SpreadsheetService implements BaseService<Spreadsheet> {
     }
 
     public Optional<Spreadsheet> loadByName(String spreadsheetName) {
-        return repository.findByName(spreadsheetName);
+        return repository.findByNameAndDeletedFalse(spreadsheetName);
     }
 }
