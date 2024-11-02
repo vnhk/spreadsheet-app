@@ -125,7 +125,7 @@ public class SpreadsheetUtils {
         List<Grid.Column<SpreadsheetRow>> columns = grid.getColumns();
         for (int i = 0; i < columns.size(); i++) {
             if (columns.get(i).getId().isPresent() && columns.get(i).getId().get().equals(selectedColumn)) {
-                return i;
+                return i - 1; //i - 1 because first column is rowNumber
             }
         }
         return -1;
