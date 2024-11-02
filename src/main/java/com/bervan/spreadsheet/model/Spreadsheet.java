@@ -55,10 +55,10 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
     public void addRow() {
         SpreadsheetRow newRow = new SpreadsheetRow(columnCount);
         rows.add(newRow);
-        updateRowsNumber();
+        updateRowsAndCellsNumber();
     }
 
-    public void updateRowsNumber() {
+    public void updateRowsAndCellsNumber() {
         for (int i = 0; i < rows.size(); i++) {
             rows.get(i).number = i;
             for (int i1 = 0; i1 < rows.get(i).getCells().size(); i1++) {
@@ -93,12 +93,12 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
         }
         SpreadsheetRow duplicatedRow = new SpreadsheetRow(row);
         rows.add(oldRowIndex + 1, duplicatedRow);
-        updateRowsNumber();
+        updateRowsAndCellsNumber();
     }
 
     public void removeRow(SpreadsheetRow row) {
         rows.remove(row);
-        updateRowsNumber();
+        updateRowsAndCellsNumber();
     }
 
     public void duplicateColumn(int columnIndex) {
@@ -106,6 +106,7 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
         for (SpreadsheetRow row : rows) {
             row.addCell(columnIndex + 1, row.getCell(columnIndex));  // Duplicate the cell value
         }
+        updateRowsAndCellsNumber();
     }
 
     public void removeColumn(int columnIndex) {
@@ -115,6 +116,7 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
                 row.removeCell(columnIndex);
             }
         }
+        updateRowsAndCellsNumber();
     }
 
     public String getName() {
