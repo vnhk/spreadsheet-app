@@ -60,15 +60,17 @@ public interface SpreadsheetFunction {
     }
 
     default double getDouble(List<Object> params, int i) {
-        Object param = params.get(i);
-        double val;
-        if (param instanceof Cell) {
-            val = Double.parseDouble(((Cell) param).value);
-        } else if (param instanceof String || param == null) {
+        try {
+            Object param = params.get(i);
+            double val;
+            if (param instanceof Cell) {
+                val = Double.parseDouble(((Cell) param).value);
+            } else {
+                val = Double.parseDouble(String.valueOf(param));
+            }
+            return val;
+        } catch (Exception e) {
             throw new NotANumberException();
-        } else {
-            val = Double.parseDouble(String.valueOf(param));
         }
-        return val;
     }
 }
