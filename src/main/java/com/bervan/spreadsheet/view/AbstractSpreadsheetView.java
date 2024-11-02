@@ -2,18 +2,12 @@ package com.bervan.spreadsheet.view;
 
 import com.bervan.common.AbstractPageView;
 import com.bervan.common.BervanTextField;
+import com.bervan.common.model.UtilsMessage;
 import com.bervan.core.model.BervanLogger;
-import com.bervan.spreadsheet.functions.DivisionFunction;
-import com.bervan.spreadsheet.functions.MultiplyFunction;
-import com.bervan.spreadsheet.functions.SubtractFunction;
-import com.bervan.spreadsheet.functions.SumFunction;
-import com.bervan.spreadsheet.model.Cell;
-import com.bervan.spreadsheet.model.Spreadsheet;
-import com.bervan.spreadsheet.model.SpreadsheetRow;
-import com.bervan.spreadsheet.model.TextFieldCell;
+import com.bervan.spreadsheet.functions.*;
+import com.bervan.spreadsheet.model.*;
 import com.bervan.spreadsheet.service.SpreadsheetRowConverter;
 import com.bervan.spreadsheet.service.SpreadsheetService;
-import com.bervan.common.model.UtilsMessage;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -46,13 +40,19 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         if (entity.isPresent()) {
             spreadsheet = entity.get();
             String body = spreadsheet.getBody();
-            spreadsheet.setRows(SpreadsheetRowConverter.deserializeSpreadsheet(body));
+            String columnsConfig = spreadsheet.getColumnsConfig();
+            spreadsheet.setRows(SpreadsheetRowConverter.deserializeSpreadsheetBody(body));
+            spreadsheet.setConfigs(SpreadsheetRowConverter.deserializeColumnsConfig(columnsConfig));
         } else {
             spreadsheet = new Spreadsheet(spreadsheetName);
         }
 
         if (spreadsheet.getRows() == null) {
             spreadsheet.setRows(new ArrayList<>());
+        }
+
+        if (spreadsheet.getConfigs() == null) {
+            spreadsheet.setConfigs(new ArrayList<>());
         }
 
         grid = new Grid<>(SpreadsheetRow.class);
@@ -109,6 +109,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         grid.removeAllColumns();
 
         grid.addColumn(item -> spreadsheet.getRows().indexOf(item)).setHeader("No.")
+                .setWidth("50px")
                 .setFrozen(true);
 
         for (int i = 0; i < spreadsheet.getColumnCount(); i++) {
@@ -141,7 +142,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                             }
 
                             try {
-
                                 if (reloadRelated(row.number, columnIndex)) {
                                     grid.getDataProvider().refreshItem(row);
                                 }
@@ -150,14 +150,34 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                                 cell.value = "ERROR";
                                 cell.isFunction = false;
                             }
-
                         });
-                        return cellField;
-                    }))
-                    .setHeader(getColumnHeader(columnIndex));
-            spreadsheetRowColumn.setWidth("200px");
+                return cellField;
+            })).setHeader(getColumnHeader(columnIndex));
+            spreadsheetRowColumn.setResizable(true).setFlexGrow(0);
             spreadsheetRowColumn.setId("col" + (columnIndex + 1));
+
+            Optional<ColumnConfig> columnOptional = spreadsheet.getConfigs().stream().filter(e -> e.columnIndex == columnIndex).findFirst();
+
+            if (columnOptional.isPresent()) {
+                spreadsheetRowColumn.setWidth(columnOptional.get().width);
+            } else {
+                if (spreadsheetRowColumn.getWidth() == null) {
+                    spreadsheetRowColumn.setWidth("100px");
+                }
+                ColumnConfig newColumnConfig = new ColumnConfig();
+                newColumnConfig.columnIndex = columnIndex;
+                newColumnConfig.width = spreadsheetRowColumn.getWidth();
+                spreadsheet.getConfigs().add(newColumnConfig);
+            }
         }
+
+        grid.addColumnResizeListener(event -> {
+            String header = event.getResizedColumn().getHeaderText();
+            int columnIndex = getColumnIndex(header);
+            ColumnConfig columnConfig = spreadsheet.getConfigs().stream().filter(e -> e.columnIndex == columnIndex).findFirst().get();
+            String newWidth = event.getResizedColumn().getWidth();
+            columnConfig.width = newWidth;
+        });
 
         // Enable single-click editing for all cells
         Binder<SpreadsheetRow> binder = new Binder<>(SpreadsheetRow.class);
@@ -174,6 +194,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             cell.value = (String.valueOf(new SubtractFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
         } else if ("/".equals(cell.function)) {
             cell.value = (String.valueOf(new DivisionFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
+        } else if ("TOTAL_SAVINGS".equals(cell.function)) {
+            cell.value = (String.valueOf(new TotalSavingsFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
+        } else if ("SAVINGS_M_CONTR".equals(cell.function)) {
+            cell.value = (String.valueOf(new SavingsWithMonthlyContribution().calculate(cell.relatedCells, spreadsheet.getRows())));
         }
     }
 
@@ -241,7 +265,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void sortColumnsModal() {
         Dialog dialog = new Dialog();
-        dialog.setWidth("50vw");
+        dialog.setWidth("30vw");
 
         // Fields for input
         BervanTextField columnsField = new BervanTextField("Type columns (comma separated)", "E,F");
@@ -290,8 +314,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void saveChanges() {
         try {
-            String body = SpreadsheetRowConverter.serializeSpreadsheet(spreadsheet.getRows());
+            String body = SpreadsheetRowConverter.serializeSpreadsheetBody(spreadsheet.getRows());
             spreadsheet.setBody(body);
+            String config = SpreadsheetRowConverter.serializeColumnsConfig(spreadsheet.getConfigs());
+            spreadsheet.setColumnsConfig(config);
             service.save(spreadsheet);
             showSuccessNotification("Saved!");
         } catch (Exception e) {

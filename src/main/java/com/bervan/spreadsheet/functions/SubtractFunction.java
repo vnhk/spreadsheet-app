@@ -23,6 +23,7 @@ public class SubtractFunction implements SpreadsheetFunction {
 
             return String.valueOf(res);
         } catch (Exception e) {
+            e.printStackTrace();
             return "ERROR!";
         }
     }

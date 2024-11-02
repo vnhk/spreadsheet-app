@@ -23,8 +23,12 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
     private String description;
     @Column(columnDefinition = "LONGTEXT")
     private String body;
+    @Column(columnDefinition = "LONGTEXT")
+    private String columnsConfig;
     @Transient
     private List<SpreadsheetRow> rows = new ArrayList<>();
+    @Transient
+    private List<ColumnConfig> configs = new ArrayList<>();
     private Integer columnCount = 10;
     private LocalDateTime modificationDate;
     private Boolean deleted = false;
@@ -181,5 +185,21 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
 
     public void setRows(List<SpreadsheetRow> rows) {
         this.rows = rows;
+    }
+
+    public String getColumnsConfig() {
+        return columnsConfig;
+    }
+
+    public void setColumnsConfig(String columnConfig) {
+        this.columnsConfig = columnConfig;
+    }
+
+    public List<ColumnConfig> getConfigs() {
+        return configs;
+    }
+
+    public void setConfigs(List<ColumnConfig> configs) {
+        this.configs = configs;
     }
 }

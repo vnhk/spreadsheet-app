@@ -6,7 +6,7 @@ public class TextFieldCell extends TextField {
     public boolean isFocused;
 
     public TextFieldCell() {
-        setWidth("200px");
+        setWidth("100%");
     }
 }
 

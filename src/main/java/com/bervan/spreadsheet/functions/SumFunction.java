@@ -22,6 +22,7 @@ public class SumFunction implements SpreadsheetFunction {
 
             return String.valueOf(res);
         } catch (Exception e) {
+            e.printStackTrace();
             return "ERROR!";
         }
     }

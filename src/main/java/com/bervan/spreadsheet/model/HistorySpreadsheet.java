@@ -23,6 +23,9 @@ public class HistorySpreadsheet implements AbstractBaseHistoryEntity<UUID> {
     @Column(columnDefinition = "LONGTEXT")
     @HistoryField
     private String body;
+    @Column(columnDefinition = "LONGTEXT")
+    @HistoryField
+    private String columnsConfig;
     @HistoryField
     private Integer columnCount;
 
@@ -88,5 +91,13 @@ public class HistorySpreadsheet implements AbstractBaseHistoryEntity<UUID> {
 
     public void setHistoryOwner(Spreadsheet historyOwner) {
         this.historyOwner = historyOwner;
+    }
+
+    public String getColumnsConfig() {
+        return columnsConfig;
+    }
+
+    public void setColumnsConfig(String columnConfig) {
+        this.columnsConfig = columnConfig;
     }
 }
