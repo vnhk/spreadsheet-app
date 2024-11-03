@@ -4,6 +4,7 @@ import com.bervan.common.model.UtilsMessage;
 import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
+import com.google.common.base.Strings;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 
@@ -217,6 +218,23 @@ public class SpreadsheetUtils {
             return true;
         } catch (NumberFormatException e) {
             return false;
+        }
+    }
+
+    public static boolean isLiteralValue(String relatedCell) {
+        try {
+            String columnHeader = getColumnHeader(relatedCell);
+            int rowNumberFromColumn = getRowNumberFromColumn(relatedCell);
+
+            if (!Strings.isNullOrEmpty(columnHeader)
+                    && !columnHeader.equals(relatedCell)
+                    && rowNumberFromColumn != Integer.parseInt(relatedCell)) {
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            return true;
         }
     }
 }

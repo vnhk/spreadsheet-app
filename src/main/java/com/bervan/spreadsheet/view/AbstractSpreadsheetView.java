@@ -8,6 +8,7 @@ import com.bervan.spreadsheet.functions.*;
 import com.bervan.spreadsheet.model.*;
 import com.bervan.spreadsheet.service.SpreadsheetRowConverter;
 import com.bervan.spreadsheet.service.SpreadsheetService;
+import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -315,7 +316,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             majorCellsLoop:
             for (Cell functionCell : functionCells) {
                 for (String relatedCell : functionCell.getRelatedCellsId()) {
-                    if (!refreshedCells.contains(relatedCell)) {
+                    if (!SpreadsheetUtils.isLiteralValue(relatedCell) && !refreshedCells.contains(relatedCell)) {
                         continue majorCellsLoop;
                     }
                 }
