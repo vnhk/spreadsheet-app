@@ -108,15 +108,32 @@ public class SpreadsheetUtils {
         return utilsMessage;
     }
 
-    public static int extractRowIndex(String input) {
+    public static int getRowNumberFromColumn(String input) {
         String numberPart = input.replaceAll("[^0-9]", "");
         return Integer.parseInt(numberPart);
     }
 
-    public static int getColumnIndex(String columnLabel) {
+    public static String incrementRowIndexInColumnName(String input) {
+        int oldRow = getRowNumberFromColumn(input);
+        return input.replace(String.valueOf(oldRow), String.valueOf(oldRow + 1));
+    }
+
+    public static String incrementColumnIndexInColumnName(String input) {
+        int oldColumnIndex = getColumnIndex(getColumnHeader(input));
+        String oldColumnHeader = getColumnHeader(oldColumnIndex);
+        String newColumnHeader = getColumnHeader(oldColumnIndex + 1);
+        return input.replace(oldColumnHeader, newColumnHeader);
+    }
+
+    public static String decrementRowIndexInColumnName(String input) {
+        int oldRow = getRowNumberFromColumn(input);
+        return input.replace(String.valueOf(oldRow), String.valueOf(oldRow - 1));
+    }
+
+    public static int getColumnIndex(String columnSymbol) {
         int columnIndex = 0;
-        for (int i = 0; i < columnLabel.length(); i++) {
-            columnIndex = columnIndex * 26 + (columnLabel.charAt(i) - 'A' + 1);
+        for (int i = 0; i < columnSymbol.length(); i++) {
+            columnIndex = columnIndex * 26 + (columnSymbol.charAt(i) - 'A' + 1);
         }
         return columnIndex - 1;
     }
@@ -131,6 +148,10 @@ public class SpreadsheetUtils {
         return -1;
     }
 
+    public static String getColumnHeader(String columnLabel) {
+        return columnLabel.replaceAll("[^A-Z]", "");
+    }
+
     public static String getColumnHeader(int columnIndex) {
         StringBuilder label = new StringBuilder();
         while (columnIndex >= 0) {
@@ -138,6 +159,56 @@ public class SpreadsheetUtils {
             columnIndex = columnIndex / 26 - 1;
         }
         return label.toString();
+    }
+
+    public static void shiftRowsInFunctionsToRowPlus1(int oldRowIndex, List<SpreadsheetRow> rows) {
+        if (oldRowIndex + 1 > rows.size()) {
+            return;
+        }
+
+        List<Integer> spreadsheetRowsToShift = rows.subList(oldRowIndex + 1, rows.size())
+                .stream().map(e -> e.number)
+                .toList();
+
+        for (SpreadsheetRow spreadsheetRow : rows) {
+            for (Cell cell : spreadsheetRow.getCells()) {
+                if (cell.isFunction) {
+                    for (int i = 0; i < cell.getRelatedCellsId().size(); i++) {
+                        String relatedCell = cell.getRelatedCellsId().get(i);
+                        Integer rowNumber = SpreadsheetUtils.getRowNumberFromColumn(relatedCell);
+                        if (spreadsheetRowsToShift.contains(rowNumber)) {
+                            String newRelatedCell = SpreadsheetUtils.incrementRowIndexInColumnName(relatedCell);
+                            cell.updateFunctionRelatedCell(relatedCell, newRelatedCell);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    public static void shiftColumnsPlus1InFunctions(int columnIndex, List<SpreadsheetRow> rows) {
+        SpreadsheetRow spreadsheetRow0 = rows.get(0); //it must exist to use this function
+        List<String> affectedColumns = spreadsheetRow0.getCells().stream().filter(e -> e.columnNumber > columnIndex)
+                .map(e -> e.columnSymbol)
+                .toList();
+        // > or >= ?????
+
+        //each affected column in any function in any cell has to be updated + 1
+        for (SpreadsheetRow spreadsheetRow : rows) {
+            for (Cell cell : spreadsheetRow.getCells()) {
+                if (cell.isFunction) {
+                    for (int i = 0; i < cell.getRelatedCellsId().size(); i++) {
+                        String relatedCell = cell.getRelatedCellsId().get(i);
+                        String columnHeader = SpreadsheetUtils.getColumnHeader(relatedCell);
+                        if (affectedColumns.contains(columnHeader)) {
+                            String newRelatedCell = SpreadsheetUtils.incrementColumnIndexInColumnName(relatedCell);
+                            cell.updateFunctionRelatedCell(relatedCell, newRelatedCell);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static boolean isInteger(String str) {

@@ -20,7 +20,10 @@ public class SpreadsheetRow {
     }
 
     public SpreadsheetRow(SpreadsheetRow rowToCopy) {
-        this.cells.addAll(rowToCopy.getCells());
+        this.number = rowToCopy.number;
+        for (Cell cell : rowToCopy.getCells()) {
+            addCell(cell.columnNumber, cell);
+        }
     }
 
     public void addCell(int columnNumber) {
@@ -28,7 +31,12 @@ public class SpreadsheetRow {
     }
 
     public void addCell(int index, Cell cellO) {
-        Cell cell = new Cell(cellO.value, index, number);
+        Cell cell;
+        if (cellO.isFunction) {
+            cell = new Cell(cellO.getFunctionValue(), index, number);
+        } else {
+            cell = new Cell(cellO.value, index, number);
+        }
         cells.add(index, cell);
     }
 

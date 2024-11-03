@@ -10,6 +10,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import static com.bervan.spreadsheet.utils.SpreadsheetUtils.shiftColumnsPlus1InFunctions;
+import static com.bervan.spreadsheet.utils.SpreadsheetUtils.shiftRowsInFunctionsToRowPlus1;
+
 
 @Entity
 @HistorySupported
@@ -68,6 +71,8 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
             for (int i1 = 0; i1 < rows.get(i).getCells().size(); i1++) {
                 String columnHeader = getColumnHeader(i1);
                 rows.get(i).getCells().get(i1).cellId = columnHeader + i;
+                rows.get(i).getCells().get(i1).columnNumber = i1;
+                rows.get(i).getCells().get(i1).rowNumber = i;
             }
         }
     }
@@ -93,8 +98,13 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
         for (int i = 0; i < rows.size(); i++) {
             if (rows.get(i).rowId.equals(row.rowId)) {
                 oldRowIndex = i;
+                break;
             }
         }
+
+        //shift rows to row + 1 in functions
+        shiftRowsInFunctionsToRowPlus1(oldRowIndex, rows);
+
         SpreadsheetRow duplicatedRow = new SpreadsheetRow(row);
         rows.add(oldRowIndex + 1, duplicatedRow);
         updateRowsAndCellsNumber();
@@ -106,6 +116,8 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
     }
 
     public void duplicateColumn(int columnIndex) {
+        shiftColumnsPlus1InFunctions(columnIndex, rows);
+
         columnCount++;
         for (SpreadsheetRow row : rows) {
             row.addCell(columnIndex + 1, row.getCell(columnIndex));  // Duplicate the cell value

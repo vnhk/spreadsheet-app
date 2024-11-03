@@ -41,7 +41,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             spreadsheet = entity.get();
             String body = spreadsheet.getBody();
             String columnsConfig = spreadsheet.getColumnsConfig();
-            spreadsheet.setRows(SpreadsheetRowConverter.deserializeSpreadsheetBody(body));
+            List<SpreadsheetRow> rows = SpreadsheetRowConverter.deserializeSpreadsheetBody(body);
+            spreadsheet.setRows(rows);
             spreadsheet.setConfigs(SpreadsheetRowConverter.deserializeColumnsConfig(columnsConfig));
         } else {
             spreadsheet = new Spreadsheet(spreadsheetName);
@@ -66,9 +67,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         contextMenu.addItem("Duplicate Row", event -> {
             event.getItem().ifPresent(this::duplicateRow);
         });
-        contextMenu.addItem("Delete Row", event -> {
-            event.getItem().ifPresent(this::deleteRow);
-        });
+
+//        contextMenu.addItem("Delete Row", event -> {
+//            event.getItem().ifPresent(this::deleteRow);
+//        });
 
         contextMenu.addItem("Copy column");
         contextMenu.addItem("Duplicate Column", event -> {
@@ -79,14 +81,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 }
             });
         });
-        contextMenu.addItem("Delete Column", event -> {
-            event.getItem().ifPresent(row -> {
-                int columnIndex = getColumnIndex(event, grid, selectedColumn);
-                if (columnIndex != -1) {
-                    deleteColumn(columnIndex);
-                }
-            });
-        });
+//        contextMenu.addItem("Delete Column", event -> {
+//            event.getItem().ifPresent(row -> {
+//                int columnIndex = getColumnIndex(event, grid, selectedColumn);
+//                if (columnIndex != -1) {
+//                    deleteColumn(columnIndex);
+//                }
+//            });
+//        });
 
         contextMenu.addGridContextMenuOpenedListener(event -> {
             event.getColumnId().ifPresent(id -> {
@@ -96,8 +98,22 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         add(new SpreadsheetPageLayout(true, spreadsheetName));
         add(grid);
-        updateGridColumns();
+        refreshGrid();
         addBottomRowButton();
+    }
+
+    private void updateCellsMetadata() {
+        for (SpreadsheetRow row : spreadsheet.getRows()) {
+            List<Cell> cells = row.getCells();
+            cells.sort(Comparator.comparing(e -> e.columnNumber));
+            for (int i = 0; i < cells.size(); i++) {
+                cells.get(i).columnNumber = i;
+                cells.get(i).columnSymbol = getColumnHeader(i);
+                cells.get(i).rowNumber = row.number;
+                cells.get(i).cellId = cells.get(i).columnSymbol + cells.get(i).rowNumber;
+                cells.get(i).refreshFunction();
+            }
+        }
     }
 
 
@@ -105,9 +121,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         this.service = service;
     }
 
-    private void updateGridColumns() {
-        grid.removeAllColumns();
+    private void refreshGrid() {
+        updateCellsMetadata();
+        refreshFunctionCells();
 
+        grid.removeAllColumns();
         grid.addColumn(item -> spreadsheet.getRows().indexOf(item)).setHeader("No.")
                 .setWidth("50px")
                 .setFrozen(true);
@@ -115,22 +133,24 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (int i = 0; i < spreadsheet.getColumnCount(); i++) {
             final int columnIndex = i; // Capture column index for lambda
             Grid.Column<SpreadsheetRow> spreadsheetRowColumn = grid.addColumn(new ComponentRenderer<>(row -> {
-                        TextFieldCell cellField = new TextFieldCell();
+                TextFieldCell cellField = new TextFieldCell();
                         cellField.setValue(String.valueOf(row.getCell(columnIndex).value));
                         cellField.addFocusListener(textFieldFocusEvent -> {
                             cellField.isFocused = true;
                             if (row.getCell(columnIndex).isFunction) {
-                                cellField.setValue(row.getCell(columnIndex).functionValue);
+                                cellField.setValue(row.getCell(columnIndex).getFunctionValue());
                             }
                             cellField.isFocused = false;
                         });
 
                         //unfocus
                         cellField.addBlurListener(textFieldBlurEvent -> {
+                            cellField.isFocused = true;
                             if (row.getCell(columnIndex).isFunction) {
                                 calculateFunctionValue(row.getCell(columnIndex));
                                 grid.getDataProvider().refreshItem(row);
                             }
+                            cellField.isFocused = false;
                         });
 
                         cellField.addValueChangeListener(e -> {
@@ -146,9 +166,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                                     grid.getDataProvider().refreshItem(row);
                                 }
                             } catch (Exception ex) {
-                                cell.function = "ERROR";
+                                ex.printStackTrace();
+                                cell.functionName = "ERROR";
                                 cell.value = "ERROR";
                                 cell.isFunction = false;
+                                showErrorNotification("Function ERROR!");
                             }
                         });
                 return cellField;
@@ -186,18 +208,18 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private void calculateFunctionValue(Cell cell) {
-        if ("+".equals(cell.function)) {
-            cell.value = (String.valueOf(new SumFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
-        } else if ("*".equals(cell.function)) {
-            cell.value = (String.valueOf(new MultiplyFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
-        } else if ("-".equals(cell.function)) {
-            cell.value = (String.valueOf(new SubtractFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
-        } else if ("/".equals(cell.function)) {
-            cell.value = (String.valueOf(new DivisionFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
-        } else if ("TOTAL_SAVINGS".equals(cell.function)) {
-            cell.value = (String.valueOf(new TotalSavingsFunction().calculate(cell.relatedCells, spreadsheet.getRows())));
-        } else if ("SAVINGS_M_CONTR".equals(cell.function)) {
-            cell.value = (String.valueOf(new SavingsWithMonthlyContribution().calculate(cell.relatedCells, spreadsheet.getRows())));
+        if ("+".equals(cell.functionName)) {
+            cell.value = (String.valueOf(new SumFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+        } else if ("*".equals(cell.functionName)) {
+            cell.value = (String.valueOf(new MultiplyFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+        } else if ("-".equals(cell.functionName)) {
+            cell.value = (String.valueOf(new SubtractFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+        } else if ("/".equals(cell.functionName)) {
+            cell.value = (String.valueOf(new DivisionFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+        } else if ("TOTAL_SAVINGS".equals(cell.functionName)) {
+            cell.value = (String.valueOf(new TotalSavingsFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+        } else if ("SAVINGS_M_CONTR".equals(cell.functionName)) {
+            cell.value = (String.valueOf(new SavingsWithMonthlyContribution().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
         }
     }
 
@@ -214,17 +236,19 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (SpreadsheetRow row : spreadsheet.getRows()) {
             List<Cell> cells = row.getCells();
             for (Cell cell : cells) {
-                Optional<String> relatedColumn = cell.relatedCells.stream()
-                        .filter(e -> e.equals(getColumnHeader(columnIndex) + number))
-                        .findAny();
+                if (cell.isFunction) {
+                    Optional<String> relatedColumn = cell.getRelatedCellsId().stream()
+                            .filter(e -> e.equals(getColumnHeader(columnIndex) + number))
+                            .findAny();
 
-                if (relatedColumn.isPresent()) {
-                    calculateFunctionValue(cell);
-                    int cellRowIndex = extractRowIndex(cell.cellId);
-                    int cellColumnIndex = getColumnIndex(cell.cellId.replace(String.valueOf(cellRowIndex), ""));
-                    grid.getDataProvider().refreshItem(row);
+                    if (relatedColumn.isPresent()) {
+                        calculateFunctionValue(cell);
+                        int cellRowIndex = getRowNumberFromColumn(cell.cellId);
+                        int cellColumnIndex = getColumnIndex(cell.cellId.replace(String.valueOf(cellRowIndex), ""));
+                        grid.getDataProvider().refreshItem(row);
 
-                    reloadRelated(cellRowIndex, cellColumnIndex, recursionDepth + 1);
+                        reloadRelated(cellRowIndex, cellColumnIndex, recursionDepth + 1);
+                    }
                 }
             }
         }
@@ -251,6 +275,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Button sortButton = new Button("Sort columns", e -> sortColumnsModal());
         sortButton.setClassName("option-button");
 
+        Button refreshGrid = new Button("Refresh grid", e -> {
+            refreshGrid();
+            showSuccessNotification("Grid refreshed");
+        });
+        refreshGrid.setClassName("option-button");
+
         Button saveChanges = new Button("Save changes", e -> saveChanges());
         saveChanges.setClassName("option-button");
 
@@ -259,8 +289,40 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         bottomLayout.add(addRowButton);
         bottomLayout.add(addColumnButton);
         bottomLayout.add(sortButton);
+        bottomLayout.add(refreshGrid);
         add(bottomLayout);
         add(saveChanges);
+    }
+
+    private void refreshFunctionCells() {
+        //refresh all functions
+        List<Cell> functionCells = new ArrayList<>();
+        List<Cell> allCells = new ArrayList<>();
+        Set<String> refreshedCells = new HashSet<>();
+
+        for (SpreadsheetRow row : spreadsheet.getRows()) {
+            for (Cell cell : row.getCells()) {
+                if (cell.isFunction) {
+                    functionCells.add(cell);
+                } else {
+                    refreshedCells.add(cell.cellId);
+                }
+                allCells.add(cell);
+            }
+        }
+
+        while (refreshedCells.size() != allCells.size()) {
+            majorCellsLoop:
+            for (Cell functionCell : functionCells) {
+                for (String relatedCell : functionCell.getRelatedCellsId()) {
+                    if (!refreshedCells.contains(relatedCell)) {
+                        continue majorCellsLoop;
+                    }
+                }
+                calculateFunctionValue(functionCell);
+                refreshedCells.add(functionCell.cellId);
+            }
+        }
     }
 
     private void sortColumnsModal() {
@@ -314,15 +376,19 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void saveChanges() {
         try {
-            String body = SpreadsheetRowConverter.serializeSpreadsheetBody(spreadsheet.getRows());
-            spreadsheet.setBody(body);
-            String config = SpreadsheetRowConverter.serializeColumnsConfig(spreadsheet.getConfigs());
-            spreadsheet.setColumnsConfig(config);
-            service.save(spreadsheet);
+            saveInternal();
             showSuccessNotification("Saved!");
         } catch (Exception e) {
             showErrorNotification("Could not save spreadsheet!");
         }
+    }
+
+    private void saveInternal() {
+        String body = SpreadsheetRowConverter.serializeSpreadsheetBody(spreadsheet.getRows());
+        spreadsheet.setBody(body);
+        String config = SpreadsheetRowConverter.serializeColumnsConfig(spreadsheet.getConfigs());
+        spreadsheet.setColumnsConfig(config);
+        service.save(spreadsheet);
     }
 
     private void addRow() {
@@ -332,29 +398,37 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void addColumn() {
         spreadsheet.addColumn();
-        updateGridColumns();
+        refreshGrid();
         grid.getDataProvider().refreshAll();
     }
 
     private void duplicateRow(SpreadsheetRow row) {
         spreadsheet.duplicateRow(row);
+        refreshGrid();
+        grid.getDataProvider().refreshAll();
+    }
+
+    private void addRowBelow(SpreadsheetRow row) {
+        spreadsheet.duplicateRow(row);
+        refreshGrid();
         grid.getDataProvider().refreshAll();
     }
 
     private void deleteRow(SpreadsheetRow row) {
         spreadsheet.removeRow(row);
+        refreshGrid();
         grid.getDataProvider().refreshAll();
     }
 
     private void duplicateColumn(int columnIndex) {
         spreadsheet.duplicateColumn(columnIndex);
-        updateGridColumns();
+        refreshGrid();
         grid.getDataProvider().refreshAll();
     }
 
     private void deleteColumn(int columnIndex) {
         spreadsheet.removeColumn(columnIndex);
-        updateGridColumns();
+        refreshGrid();
         grid.getDataProvider().refreshAll();
     }
 }

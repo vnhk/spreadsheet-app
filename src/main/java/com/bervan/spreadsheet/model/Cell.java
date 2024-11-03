@@ -1,7 +1,9 @@
 package com.bervan.spreadsheet.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnHeader;
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnIndex;
@@ -14,10 +16,10 @@ public class Cell {
     //displayValue
     public String value = "";
     //internalValueIfFunction to be visible on click
-    public String functionValue;
-    public String function;
+    public String functionName;
+    private String functionValue;
     public boolean isFunction;
-    public List<String> relatedCells = new ArrayList<>();
+    private Map<Integer, String> relatedCells = new HashMap<>();
 
     Cell(String value, int columnNumber, int rowNumber) {
         if (value == null) {
@@ -30,31 +32,67 @@ public class Cell {
         this.rowNumber = rowNumber;
 
         if (value.startsWith("=")) {
-            functionValue = value;
-            isFunction = true;
-            function = value.split("=")[1].split("\\(")[0];
-            String toParseRelated = value.split("=")[1].split("\\(")[1];
+            buildFunction(value);
+        }
+    }
 
-            if (toParseRelated.contains(",")) {
-                //comma separated cells
-                commaSeparatedCells(toParseRelated);
-            } else if (toParseRelated.contains(":")) {
-                //range cells
-                colonSeparatedCells(toParseRelated);
+    public List<String> getRelatedCellsId() {
+        List<String> result = new ArrayList<>();
+        //order and unique are important
+        int size = relatedCells.size();
+        for (int i = 0; i < size; i++) {
+            if (!result.contains(relatedCells.get(i))) {
+                result.add(relatedCells.get(i));
             }
+        }
 
+        return result;
+    }
 
+    public String getFunctionValue() {
+        String returnFunctionValue = functionValue;
+        for (int i = 0; i < relatedCells.size(); i++) {
+            String cell = relatedCells.get(i);
+            String param = "<#" + i + ">";
+            returnFunctionValue = returnFunctionValue.replaceAll(param, cell);
+        }
+
+        return returnFunctionValue;
+    }
+
+    private void buildFunction(String value) {
+        relatedCells = new HashMap<>();
+        isFunction = true;
+        functionValue = value;
+        functionName = value.split("=")[1].split("\\(")[0];
+        String toParseRelated = value.split("=")[1].split("\\(")[1];
+
+        if (toParseRelated.contains(",")) {
+            //comma separated cells
+            commaSeparatedCells(toParseRelated);
+        } else if (toParseRelated.contains(":")) {
+            //range cells
+            colonSeparatedCells(toParseRelated);
         }
     }
 
     private void commaSeparatedCells(String toParseRelated) {
         String[] split = toParseRelated.split(",");
-        for (String s : split) {
-            if (s.endsWith(")")) {
-                s = s.substring(0, s.length() - 1);
+        for (int i = 0; i < split.length; i++) {
+            String param = split[i];
+            if (param.endsWith(")")) {
+                param = param.substring(0, param.length() - 1);
             }
-            relatedCells.add(s);
+            putParam(i, param);
+            functionValue = functionValue.replace(param, "<#" + i + ">");
         }
+    }
+
+    private void putParam(int i, String param) {
+        if (param.contains("<#")) {
+            throw new RuntimeException("INCORRECT SPREADSHEET FUNCTION PARAM");
+        }
+        relatedCells.put(i, param);
     }
 
     private void colonSeparatedCells(String toParseRelated) {
@@ -86,17 +124,23 @@ public class Cell {
                 throw new RuntimeException("Invalid usage of colon separated values!");
             }
 
+            int i = 0;
             for (; start <= end; start++) {
-                relatedCells.add(columnOne + start);
+                String param = columnOne + start;
+                putParam(i, param);
+                functionValue = functionValue.replace(param, "<#" + i + ">");
+                i++;
             }
 
         } else {
             //1 row, multiple columns
             List<String> cells = generateRange(ranges.get(0), ranges.get(1));
-            relatedCells.addAll(cells);
+            for (int i = 0; i < cells.size(); i++) {
+                String param = cells.get(i);
+                putParam(i, param);
+                functionValue = functionValue.replace(param, "<#" + i + ">");
+            }
         }
-
-
     }
 
     private List<String> generateRange(String start, String end) {
@@ -115,5 +159,19 @@ public class Cell {
         }
 
         return result;
+    }
+
+    public void refreshFunction() {
+        if (isFunction) {
+            buildFunction(getFunctionValue());
+        }
+    }
+
+    public void updateFunctionRelatedCell(String relatedCell, String newRelatedCell) {
+        for (Map.Entry<Integer, String> integerStringEntry : relatedCells.entrySet()) {
+            if (integerStringEntry.getValue().equals(relatedCell)) {
+                integerStringEntry.setValue(newRelatedCell);
+            }
+        }
     }
 }
