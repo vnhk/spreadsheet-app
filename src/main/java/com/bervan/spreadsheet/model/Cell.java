@@ -87,31 +87,37 @@ public class Cell {
     }
 
     private String saveFunctionValueParamChange(String param, int paramIndex) {
-        String[] functionInParts = null;
-        String delimiter = "";
-        if (functionValue.contains(",")) {
-            functionInParts = functionValue.split(",");
-            delimiter = ",";
-        } else if (functionValue.contains(":")) {
-            functionInParts = functionValue.split(":");
-            delimiter = ":";
-        }
-
-        if (functionInParts != null) {
-            String newPart = functionInParts[paramIndex].replace(param, "<#" + paramIndex + ">");
-
-            List<String> newParts = new ArrayList<>();
-
-            for (int i = 0; i < functionInParts.length; i++) {
-                if (i == paramIndex) {
-                    newParts.add(newPart);
-                } else {
-                    newParts.add(functionInParts[i]);
-                }
+        try{
+            String[] functionInParts = null;
+            String delimiter = "";
+            if (functionValue.contains(",")) {
+                functionInParts = functionValue.split(",");
+                delimiter = ",";
+            } else if (functionValue.contains(":")) {
+                functionInParts = functionValue.split(":");
+                delimiter = ":";
             }
 
-            return String.join(delimiter, newParts);
+            if (functionInParts != null) {
+                String newPart = functionInParts[paramIndex].replace(param, "<#" + paramIndex + ">");
+
+                List<String> newParts = new ArrayList<>();
+
+                for (int i = 0; i < functionInParts.length; i++) {
+                    if (i == paramIndex) {
+                        newParts.add(newPart);
+                    } else {
+                        newParts.add(functionInParts[i]);
+                    }
+                }
+
+                return String.join(delimiter, newParts);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
         }
+
 
         return "";
     }
