@@ -38,12 +38,10 @@ public class Cell {
 
     public List<String> getRelatedCellsId() {
         List<String> result = new ArrayList<>();
-        //order and unique are important
+        //order is important
         int size = relatedCells.size();
         for (int i = 0; i < size; i++) {
-            if (!result.contains(relatedCells.get(i))) {
-                result.add(relatedCells.get(i));
-            }
+            result.add(relatedCells.get(i));
         }
 
         return result;
@@ -84,13 +82,43 @@ public class Cell {
                 param = param.substring(0, param.length() - 1);
             }
             putParam(i, param);
-            functionValue = functionValue.replace(param, "<#" + i + ">");
+            functionValue = saveFunctionValueParamChange(param, i);
         }
+    }
+
+    private String saveFunctionValueParamChange(String param, int paramIndex) {
+        String[] functionInParts = null;
+        String delimiter = "";
+        if (functionValue.contains(",")) {
+            functionInParts = functionValue.split(",");
+            delimiter = ",";
+        } else if (functionValue.contains(":")) {
+            functionInParts = functionValue.split(":");
+            delimiter = ":";
+        }
+
+        if (functionInParts != null) {
+            String newPart = functionInParts[paramIndex].replace(param, "<#" + paramIndex + ">");
+
+            List<String> newParts = new ArrayList<>();
+
+            for (int i = 0; i < functionInParts.length; i++) {
+                if (i == paramIndex) {
+                    newParts.add(newPart);
+                } else {
+                    newParts.add(functionInParts[i]);
+                }
+            }
+
+            return String.join(delimiter, newParts);
+        }
+
+        return "";
     }
 
     private void putParam(int i, String param) {
         if (param.contains("<#")) {
-            throw new RuntimeException("INCORRECT SPREADSHEET FUNCTION PARAM");
+//            throw new RuntimeException("INCORRECT SPREADSHEET FUNCTION PARAM");
         }
         relatedCells.put(i, param);
     }
@@ -128,7 +156,7 @@ public class Cell {
             for (; start <= end; start++) {
                 String param = columnOne + start;
                 putParam(i, param);
-                functionValue = functionValue.replace(param, "<#" + i + ">");
+                functionValue = saveFunctionValueParamChange(param, i);
                 i++;
             }
 
@@ -138,7 +166,7 @@ public class Cell {
             for (int i = 0; i < cells.size(); i++) {
                 String param = cells.get(i);
                 putParam(i, param);
-                functionValue = functionValue.replace(param, "<#" + i + ">");
+                functionValue = saveFunctionValueParamChange(param, i);
             }
         }
     }
