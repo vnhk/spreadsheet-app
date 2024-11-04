@@ -49,10 +49,12 @@ public class Cell {
 
     public String getFunctionValue() {
         String returnFunctionValue = functionValue;
+
         for (int i = 0; i < relatedCells.size(); i++) {
-            String cell = relatedCells.get(i);
             String param = "<#" + i + ">";
-            returnFunctionValue = returnFunctionValue.replaceAll(param, cell);
+            if (returnFunctionValue.contains(param)) {
+                returnFunctionValue = returnFunctionValue.replace(param, relatedCells.get(i));
+            }
         }
 
         return returnFunctionValue;
@@ -88,12 +90,12 @@ public class Cell {
                 param = param.substring(0, param.length() - 1);
             }
             putParam(i, param);
-            functionValue = saveFunctionValueParamChange(param, i);
+            functionValue = saveFunctionValueParamChange(param, i, i);
         }
     }
 
-    private String saveFunctionValueParamChange(String param, int paramIndex) {
-        try{
+    private String saveFunctionValueParamChange(String param, int variableOrderInFunction, int resultVariableIndex) {
+        try {
             String[] functionInParts = null;
             String delimiter = "";
             if (functionValue.contains(",")) {
@@ -105,12 +107,12 @@ public class Cell {
             }
 
             if (functionInParts != null) {
-                String newPart = functionInParts[paramIndex].replace(param, "<#" + paramIndex + ">");
+                String newPart = functionInParts[variableOrderInFunction].replace(param, "<#" + resultVariableIndex + ">");
 
                 List<String> newParts = new ArrayList<>();
 
                 for (int i = 0; i < functionInParts.length; i++) {
-                    if (i == paramIndex) {
+                    if (i == variableOrderInFunction) {
                         newParts.add(newPart);
                     } else {
                         newParts.add(functionInParts[i]);
@@ -168,9 +170,15 @@ public class Cell {
             for (; start <= end; start++) {
                 String param = columnOne + start;
                 putParam(i, param);
-                functionValue = saveFunctionValueParamChange(param, i);
                 i++;
             }
+
+            int size = relatedCells.size();
+            String rangeStart = relatedCells.get(0);
+            String rangeEnd = relatedCells.get(size - 1);
+            functionValue = saveFunctionValueParamChange(rangeStart, 0, 0);
+            functionValue = saveFunctionValueParamChange(rangeEnd, 1, size - 1);
+
 
         } else {
             //1 row, multiple columns
@@ -178,7 +186,7 @@ public class Cell {
             for (int i = 0; i < cells.size(); i++) {
                 String param = cells.get(i);
                 putParam(i, param);
-                functionValue = saveFunctionValueParamChange(param, i);
+                functionValue = saveFunctionValueParamChange(param, i, i);
             }
         }
     }
