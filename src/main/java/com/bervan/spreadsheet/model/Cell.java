@@ -59,18 +59,24 @@ public class Cell {
     }
 
     private void buildFunction(String value) {
-        relatedCells = new HashMap<>();
-        isFunction = true;
-        functionValue = value;
-        functionName = value.split("=")[1].split("\\(")[0];
-        String toParseRelated = value.split("=")[1].split("\\(")[1];
+        try {
+            relatedCells = new HashMap<>();
+            isFunction = true;
+            functionValue = value;
+            functionName = value.split("=")[1].split("\\(")[0];
+            String toParseRelated = value.split("=")[1].split("\\(")[1];
 
-        if (toParseRelated.contains(",")) {
-            //comma separated cells
-            commaSeparatedCells(toParseRelated);
-        } else if (toParseRelated.contains(":")) {
-            //range cells
-            colonSeparatedCells(toParseRelated);
+            if (toParseRelated.contains(",")) {
+                //comma separated cells
+                commaSeparatedCells(toParseRelated);
+            } else if (toParseRelated.contains(":")) {
+                //range cells
+                colonSeparatedCells(toParseRelated);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            this.value = "ERROR";
+            this.functionValue = "ERROR";
         }
     }
 
