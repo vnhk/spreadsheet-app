@@ -15,7 +15,7 @@ public abstract class AbstractSpreadsheetsView extends AbstractTableView<Spreads
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets";
 
     public AbstractSpreadsheetsView(BaseService<Spreadsheet> service, BervanLogger log) {
-        super(new SpreadsheetPageLayout(false, null), service, "Spreadsheets", log, Spreadsheet.class);
+        super(new SpreadsheetPageLayout(false, null), service, log, Spreadsheet.class);
         renderCommonComponents();
     }
 
