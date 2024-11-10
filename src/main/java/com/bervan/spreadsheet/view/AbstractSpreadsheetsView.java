@@ -10,11 +10,13 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 
+import java.util.UUID;
 
-public abstract class AbstractSpreadsheetsView extends AbstractTableView<Spreadsheet> {
+
+public abstract class AbstractSpreadsheetsView extends AbstractTableView<UUID, Spreadsheet> {
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets";
 
-    public AbstractSpreadsheetsView(BaseService<Spreadsheet> service, BervanLogger log) {
+    public AbstractSpreadsheetsView(BaseService<UUID, Spreadsheet> service, BervanLogger log) {
         super(new SpreadsheetPageLayout(false, null), service, log, Spreadsheet.class);
         renderCommonComponents();
     }

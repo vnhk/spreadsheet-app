@@ -2,11 +2,11 @@ package com.bervan.spreadsheet.model;
 
 import com.bervan.common.model.PersistableTableData;
 import com.bervan.common.model.VaadinTableColumn;
+import com.bervan.common.user.User;
 import com.bervan.history.model.AbstractBaseEntity;
 import com.bervan.history.model.HistoryCollection;
 import com.bervan.history.model.HistorySupported;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -16,7 +16,7 @@ import static com.bervan.spreadsheet.utils.SpreadsheetUtils.shiftRowsInFunctions
 
 @Entity
 @HistorySupported
-public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableData {
+public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableData<UUID> {
     @Id
     @GeneratedValue
     private UUID id;
@@ -35,6 +35,19 @@ public class Spreadsheet implements AbstractBaseEntity<UUID>, PersistableTableDa
     private Integer columnCount = 10;
     private LocalDateTime modificationDate;
     private Boolean deleted = false;
+
+    @ManyToOne
+    private User owner;
+
+    @Override
+    public User getOwner() {
+        return owner;
+    }
+
+    @Override
+    public void setOwner(User user) {
+        this.owner = user;
+    }
 
     @OneToMany(fetch = FetchType.EAGER)
     @HistoryCollection(historyClass = HistorySpreadsheet.class)
