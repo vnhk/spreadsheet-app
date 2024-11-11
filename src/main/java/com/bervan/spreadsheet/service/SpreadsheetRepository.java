@@ -3,9 +3,9 @@ package com.bervan.spreadsheet.service;
 import com.bervan.history.model.BaseRepository;
 import com.bervan.spreadsheet.model.Spreadsheet;
 
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface SpreadsheetRepository extends BaseRepository<Spreadsheet, UUID> {
-    Optional<Spreadsheet> findByNameAndDeletedFalseAndOwnerId(String name, UUID ownerId);
+    List<Spreadsheet> findByNameAndDeletedFalseAndOwnersId(String name, UUID ownerId);
 }

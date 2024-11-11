@@ -37,9 +37,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     @Override
     public void setParameter(BeforeEvent beforeEvent, String s) {
         String spreadsheetName = beforeEvent.getRouteParameters().get("___url_parameter").orElse(UUID.randomUUID().toString());
-        Optional<Spreadsheet> entity = service.loadByName(spreadsheetName);
-        if (entity.isPresent()) {
-            spreadsheet = entity.get();
+        List<Spreadsheet> entity = service.loadByName(spreadsheetName);
+        if (entity.size() > 0) {
+            spreadsheet = entity.get(0);
             String body = spreadsheet.getBody();
             String columnsConfig = spreadsheet.getColumnsConfig();
             List<SpreadsheetRow> rows = SpreadsheetRowConverter.deserializeSpreadsheetBody(body);

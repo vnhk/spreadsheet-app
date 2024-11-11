@@ -3,6 +3,7 @@ package com.bervan.spreadsheet.service;
 import com.bervan.common.service.AuthService;
 import com.bervan.common.service.BaseService;
 import com.bervan.spreadsheet.model.Spreadsheet;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +28,7 @@ public class SpreadsheetService implements BaseService<UUID, Spreadsheet> {
     }
 
     @Override
-    @PostFilter("filterObject.owner != null && filterObject.owner.getId().equals(T(com.bervan.common.service.AuthService).getLoggedUserId())")
+    @PostFilter("(T(com.bervan.common.service.AuthService).hasAccess(filterObject.owners))")
     public Set<Spreadsheet> load() {
         return new HashSet<>(repository.findAll());
     }
@@ -38,8 +39,8 @@ public class SpreadsheetService implements BaseService<UUID, Spreadsheet> {
         repository.save(item);
     }
 
-    @PostFilter("filterObject.owner != null && filterObject.owner.getId().equals(T(com.bervan.common.service.AuthService).getLoggedUserId())")
-    public Optional<Spreadsheet> loadByName(String spreadsheetName) {
-        return repository.findByNameAndDeletedFalseAndOwnerId(spreadsheetName, AuthService.getLoggedUserId());
+    @PostFilter("(T(com.bervan.common.service.AuthService).hasAccess(filterObject.owners))")
+    public List<Spreadsheet> loadByName(String spreadsheetName) {
+        return repository.findByNameAndDeletedFalseAndOwnersId(spreadsheetName, AuthService.getLoggedUserId());
     }
 }

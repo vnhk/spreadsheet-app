@@ -11,6 +11,7 @@ import java.util.UUID;
 
 
 @Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @HistorySupported
 public class HistorySpreadsheet implements AbstractBaseHistoryEntity<UUID> {
     @Id
