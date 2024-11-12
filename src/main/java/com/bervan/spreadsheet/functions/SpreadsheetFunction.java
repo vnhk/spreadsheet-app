@@ -11,6 +11,10 @@ import java.util.List;
 public interface SpreadsheetFunction {
     String calculate(List<String> relatedCells, List<SpreadsheetRow> rows);
 
+    String getInfo();
+
+    String getName();
+
     default List<Object> getParams(List<String> allParams, List<SpreadsheetRow> rows) {
         List<String> cells = new ArrayList<>();
         List<String> notCells = new ArrayList<>();
@@ -71,6 +75,21 @@ public interface SpreadsheetFunction {
             return val;
         } catch (Exception e) {
             throw new NotANumberException();
+        }
+    }
+
+    default String getString(List<Object> params, int i) {
+        try {
+            Object param = params.get(i);
+            String val;
+            if (param instanceof Cell) {
+                val = ((Cell) param).value;
+            } else {
+                val = String.valueOf(param);
+            }
+            return val;
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid function value");
         }
     }
 }

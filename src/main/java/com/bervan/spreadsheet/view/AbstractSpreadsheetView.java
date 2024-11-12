@@ -4,7 +4,7 @@ import com.bervan.common.AbstractPageView;
 import com.bervan.common.BervanTextField;
 import com.bervan.common.model.UtilsMessage;
 import com.bervan.core.model.BervanLogger;
-import com.bervan.spreadsheet.functions.*;
+import com.bervan.spreadsheet.functions.SpreadsheetFunction;
 import com.bervan.spreadsheet.model.*;
 import com.bervan.spreadsheet.service.SpreadsheetRowConverter;
 import com.bervan.spreadsheet.service.SpreadsheetService;
@@ -14,6 +14,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.binder.Binder;
@@ -33,6 +34,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private String selectedColumn;
     private final SpreadsheetService service;
     private static final int MAX_RECURSION_DEPTH = 100;
+    private final List<? extends SpreadsheetFunction> spreadsheetFunctions;
 
     @Override
     public void setParameter(BeforeEvent beforeEvent, String s) {
@@ -98,9 +100,19 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
 
         add(new SpreadsheetPageLayout(true, spreadsheetName));
+        addTopRowButtons();
         add(grid);
         refreshGrid();
-        addBottomRowButton();
+        addBottomRowButtons();
+    }
+
+    private void addTopRowButtons() {
+        Button showFunctionsButton = new Button("Show available functions", e -> showAvailableFunctionsModal());
+        showFunctionsButton.setClassName("option-button");
+
+        HorizontalLayout topLayout = new HorizontalLayout();
+        topLayout.add(showFunctionsButton);
+        add(topLayout);
     }
 
     private void updateCellsMetadata() {
@@ -118,8 +130,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
 
-    public AbstractSpreadsheetView(SpreadsheetService service, BervanLogger logger) {
+    public AbstractSpreadsheetView(SpreadsheetService service, BervanLogger logger, List<? extends SpreadsheetFunction> spreadsheetFunctions) {
         this.service = service;
+        this.spreadsheetFunctions = spreadsheetFunctions;
     }
 
     private void refreshGrid() {
@@ -209,18 +222,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private void calculateFunctionValue(Cell cell) {
-        if ("+".equals(cell.functionName)) {
-            cell.value = (String.valueOf(new SumFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
-        } else if ("*".equals(cell.functionName)) {
-            cell.value = (String.valueOf(new MultiplyFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
-        } else if ("-".equals(cell.functionName)) {
-            cell.value = (String.valueOf(new SubtractFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
-        } else if ("/".equals(cell.functionName)) {
-            cell.value = (String.valueOf(new DivisionFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
-        } else if ("TOTAL_SAVINGS".equals(cell.functionName)) {
-            cell.value = (String.valueOf(new TotalSavingsFunction().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
-        } else if ("SAVINGS_M_CONTR".equals(cell.functionName)) {
-            cell.value = (String.valueOf(new SavingsWithMonthlyContribution().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+        String functionName = cell.functionName;
+        Optional<? extends SpreadsheetFunction> first = spreadsheetFunctions.stream().filter(e -> e.getName().equals(functionName))
+                .findFirst();
+
+        if (first.isPresent()) {
+            cell.value = (String.valueOf(first.get().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+        } else {
+            cell.value = "NO FUNCTION";
         }
     }
 
@@ -266,7 +275,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         return label.toString();
     }
 
-    private void addBottomRowButton() {
+    private void addBottomRowButtons() {
         // Add row button positioned at the bottom center
         Button addRowButton = new Button("Add New Row", e -> addRow());
         addRowButton.setClassName("option-button");
@@ -324,6 +333,35 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 refreshedCells.add(functionCell.cellId);
             }
         }
+    }
+
+    private void showAvailableFunctionsModal() {
+        Dialog dialog = new Dialog();
+        dialog.setWidth("80vw");
+
+
+        Button okButton = new Button("Ok", e -> {
+            dialog.close();
+        });
+        okButton.setClassName("option-button");
+        // Add components to dialog
+        VerticalLayout verticalLayout = new VerticalLayout();
+        verticalLayout.add(getDialogTopBarLayout(dialog));
+
+        int i = 1;
+        for (SpreadsheetFunction spreadsheetFunction : spreadsheetFunctions) {
+            String name = spreadsheetFunction.getName();
+            String info = spreadsheetFunction.getInfo();
+            Span infoSpan = new Span();
+            infoSpan.getElement().setProperty("innerHTML", info);
+            verticalLayout.add(new Span(i + ") " + name), infoSpan);
+            i++;
+        }
+        verticalLayout.add(okButton);
+        dialog.add(verticalLayout);
+
+        // Open the dialog
+        dialog.open();
     }
 
     private void sortColumnsModal() {

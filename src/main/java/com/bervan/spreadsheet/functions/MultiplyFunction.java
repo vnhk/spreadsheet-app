@@ -2,9 +2,11 @@ package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import org.apache.commons.math3.exception.NotANumberException;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class MultiplyFunction implements SpreadsheetFunction {
     @Override
     public String calculate(List<String> allParams, List<SpreadsheetRow> rows) {
@@ -24,5 +26,20 @@ public class MultiplyFunction implements SpreadsheetFunction {
             e.printStackTrace();
             return "ERROR!";
         }
+    }
+
+    @Override
+    public String getInfo() {
+        return """
+                Examples: <br>
+                    (a) =*(A1,10) <br>
+                    (b) =*(C0:C10) <br>
+                    (c) =*(C1,B2,G10)
+                """;
+    }
+
+    @Override
+    public String getName() {
+        return "*";
     }
 }
