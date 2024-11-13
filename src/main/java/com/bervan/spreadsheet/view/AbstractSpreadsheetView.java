@@ -35,6 +35,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private final SpreadsheetService service;
     private static final int MAX_RECURSION_DEPTH = 100;
     private final List<? extends SpreadsheetFunction> spreadsheetFunctions;
+    private final List<TextFieldCell> spreadsheetVaadinCells = new ArrayList<>();
+
+    public Grid<SpreadsheetRow> getGrid() {
+        return grid;
+    }
 
     @Override
     public void setParameter(BeforeEvent beforeEvent, String s) {
@@ -62,6 +67,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         grid = new Grid<>(SpreadsheetRow.class);
         grid.setHeight("70vh");
         grid.setItems(spreadsheet.getRows());
+
 
         // Set up right-click context menu on the grid
         GridContextMenu<SpreadsheetRow> contextMenu = new GridContextMenu<>(grid);
@@ -147,7 +153,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (int i = 0; i < spreadsheet.getColumnCount(); i++) {
             final int columnIndex = i; // Capture column index for lambda
             Grid.Column<SpreadsheetRow> spreadsheetRowColumn = grid.addColumn(new ComponentRenderer<>(row -> {
-                TextFieldCell cellField = new TextFieldCell();
+                TextFieldCell cellField = new TextFieldCell(row.number, columnIndex, spreadsheetVaadinCells);
                         cellField.setValue(String.valueOf(row.getCell(columnIndex).value));
                         cellField.addFocusListener(textFieldFocusEvent -> {
                             cellField.isFocused = true;
@@ -187,6 +193,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                                 showErrorNotification("Function ERROR!");
                             }
                         });
+
+                spreadsheetVaadinCells.add(cellField);
                 return cellField;
             })).setHeader(getColumnHeader(columnIndex));
             spreadsheetRowColumn.setResizable(true).setFlexGrow(0);
