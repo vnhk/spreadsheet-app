@@ -30,6 +30,10 @@ public class SpreadsheetRow {
         cells.add(new Cell("", columnNumber, number));
     }
 
+    public void removeAllCells() {
+        cells.removeAll(cells);
+    }
+
     public void addCell(int index, Cell cellO) {
         Cell cell;
         if (cellO.isFunction) {

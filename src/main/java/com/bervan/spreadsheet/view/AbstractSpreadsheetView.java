@@ -77,6 +77,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             event.getItem().ifPresent(this::duplicateRow);
         });
 
+        contextMenu.addItem("Clear row data", event -> {
+            event.getItem().ifPresent(this::clearDataInRow);
+        });
+
 //        contextMenu.addItem("Delete Row", event -> {
 //            event.getItem().ifPresent(this::deleteRow);
 //        });
@@ -87,6 +91,15 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 int columnIndex = getColumnIndex(event, grid, selectedColumn);
                 if (columnIndex != -1) {
                     duplicateColumn(columnIndex);
+                }
+            });
+        });
+
+        contextMenu.addItem("Clear column data", event -> {
+            event.getItem().ifPresent(row -> {
+                int columnIndex = getColumnIndex(event, grid, selectedColumn);
+                if (columnIndex != -1) {
+                    clearColumnData(columnIndex);
                 }
             });
         });
@@ -463,6 +476,18 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void deleteRow(SpreadsheetRow row) {
         spreadsheet.removeRow(row);
+        refreshGrid();
+        grid.getDataProvider().refreshAll();
+    }
+
+    private void clearDataInRow(SpreadsheetRow row) {
+        spreadsheet.clearDataInRow(row);
+        refreshGrid();
+        grid.getDataProvider().refreshAll();
+    }
+
+    private void clearColumnData(int columnNumber) {
+        spreadsheet.clearColumnData(columnNumber);
         refreshGrid();
         grid.getDataProvider().refreshAll();
     }

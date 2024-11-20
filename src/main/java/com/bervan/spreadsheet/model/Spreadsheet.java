@@ -136,6 +136,23 @@ public class Spreadsheet extends BervanBaseEntity<UUID> implements PersistableTa
         updateRowsAndCellsNumber();
     }
 
+    public void clearDataInRow(SpreadsheetRow row) {
+        int size = row.getCells().size();
+
+        row.removeAllCells();
+
+        for (int i = 0; i < size; i++) {
+            row.addCell(i);
+        }
+    }
+
+    public void clearColumnData(int columnNumber) {
+        for (SpreadsheetRow row : rows) {
+            row.removeCell(columnNumber);
+            row.addCell(columnNumber);
+        }
+    }
+
     public String getName() {
         return name;
     }
