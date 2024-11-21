@@ -1,6 +1,6 @@
 package com.bervan.spreadsheet.functions;
 
-import com.bervan.spreadsheet.model.SpreadsheetRow;
+import com.bervan.spreadsheet.model.Cell;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
 @Component
 public class TotalSavingsFunction implements SpreadsheetFunction {
     @Override
-    public String calculate(List<String> allParams, List<SpreadsheetRow> rows) {
+    public String calculate(List<String> allParams, List<List<Cell>> rows) {
         try {
             List<Object> paramsCareAboutOrder = getParams_careAboutOrder(allParams, rows);
 

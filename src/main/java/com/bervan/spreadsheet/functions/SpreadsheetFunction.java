@@ -1,21 +1,25 @@
 package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.Cell;
+import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import org.apache.commons.math3.exception.NotANumberException;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public interface SpreadsheetFunction {
-    String calculate(List<String> relatedCells, List<SpreadsheetRow> rows);
+    default String calculateOld(List<String> relatedCells, List<SpreadsheetRow> rows) {
+        throw new RuntimeException("Deprecated!");
+    }
+
+    String calculate(List<String> relatedCells, List<List<Cell>> rows);
 
     String getInfo();
 
     String getName();
 
-    default List<Object> getParams(List<String> allParams, List<SpreadsheetRow> rows) {
+    default List<Object> getParams(List<String> allParams, List<List<Cell>> rows) {
         List<String> cells = new ArrayList<>();
         List<String> notCells = new ArrayList<>();
 
@@ -29,8 +33,8 @@ public interface SpreadsheetFunction {
 
         List<Object> result = new ArrayList<>(notCells);
 
-        List<Cell> collect = rows.stream().map(SpreadsheetRow::getCells)
-                .flatMap(Collection::stream)
+        List<Cell> collect = rows.stream()
+                .flatMap(List::stream)
                 .filter(e -> cells.contains(e.cellId))
                 .toList();
 
@@ -39,7 +43,7 @@ public interface SpreadsheetFunction {
         return result;
     }
 
-    default List<Object> getParams_careAboutOrder(List<String> allParams, List<SpreadsheetRow> rows) {
+    default List<Object> getParams_careAboutOrder(List<String> allParams, List<List<Cell>> rows) {
         List<Object> relatedCells = new ArrayList<>();
         for (String cellId : allParams) {
             relatedCells.add(getParam(cellId, rows));
@@ -48,15 +52,15 @@ public interface SpreadsheetFunction {
         return relatedCells;
     }
 
-    private static Object getParam(String param, List<SpreadsheetRow> rows) {
+    private static Object getParam(String param, List<List<Cell>> rows) {
         if (!startsWithCapitalsAndEndsWithNumber(param)) {
             return param;
         }
 
-        return rows.stream().map(SpreadsheetRow::getCells)
-                .flatMap(Collection::stream)
-                .filter(e -> param.equals(e.cellId))
-                .findFirst().get();
+        return rows.stream()
+                .flatMap(List::stream)
+                .filter(e -> param.contains(e.cellId))
+                .toList();
     }
 
     private static boolean startsWithCapitalsAndEndsWithNumber(String input) {

@@ -1,6 +1,7 @@
 package com.bervan.spreadsheet.functions;
 
-import com.bervan.spreadsheet.model.SpreadsheetRow;
+import com.bervan.spreadsheet.model.Cell;
+import com.bervan.spreadsheet.model.Cell;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -13,7 +14,7 @@ import java.util.List;
 public class CurrencyFunction implements SpreadsheetFunction {
 
     @Override
-    public String calculate(List<String> allParams, List<SpreadsheetRow> rows) {
+    public String calculate(List<String> allParams, List<List<Cell>> rows) {
 
         //=CURRENCY(FROM,TO,AMOUNT)
 

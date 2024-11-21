@@ -21,7 +21,11 @@ public class Cell {
     public boolean isFunction;
     private Map<Integer, String> relatedCells = new HashMap<>();
 
-    Cell(String value, int columnNumber, int rowNumber) {
+    public Cell() {
+
+    }
+
+    public Cell(String value, int columnNumber, int rowNumber) {
         if (value == null) {
             value = "";
         }
@@ -60,7 +64,7 @@ public class Cell {
         return returnFunctionValue;
     }
 
-    private void buildFunction(String value) {
+    public void buildFunction(String value) {
         try {
             relatedCells = new HashMap<>();
             isFunction = true;

@@ -248,7 +248,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 .findFirst();
 
         if (first.isPresent()) {
-            cell.value = (String.valueOf(first.get().calculate(cell.getRelatedCellsId(), spreadsheet.getRows())));
+            cell.value = (String.valueOf(first.get().calculateOld(cell.getRelatedCellsId(), spreadsheet.getRows())));
         } else {
             cell.value = "NO FUNCTION";
         }
