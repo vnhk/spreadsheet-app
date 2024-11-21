@@ -71,7 +71,7 @@ public class CurrencyFunction implements SpreadsheetFunction {
             } else {
                 throw new IOException("Conversion container not found");
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return "Failed to retrieve conversion rate.";
         }
