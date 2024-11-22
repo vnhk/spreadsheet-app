@@ -1,16 +1,17 @@
 package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.Cell;
-import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import org.apache.commons.math3.exception.NotANumberException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public interface SpreadsheetFunction {
     default String calculateOld(List<String> relatedCells, List<SpreadsheetRow> rows) {
-        throw new RuntimeException("Deprecated!");
+        List<List<Cell>> collect = rows.stream().map(SpreadsheetRow::getCells).collect(Collectors.toList());
+        return calculate(relatedCells, collect);
     }
 
     String calculate(List<String> relatedCells, List<List<Cell>> rows);
