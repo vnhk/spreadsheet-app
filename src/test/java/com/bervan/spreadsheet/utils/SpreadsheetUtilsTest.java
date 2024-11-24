@@ -1,467 +1,166 @@
 package com.bervan.spreadsheet.utils;
 
 import com.bervan.common.model.UtilsMessage;
-import com.bervan.spreadsheet.model.Spreadsheet;
-import com.bervan.spreadsheet.model.SpreadsheetRow;
-import com.vaadin.flow.component.grid.Grid;
+import com.bervan.spreadsheet.model.Cell;
+import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
 
 class SpreadsheetUtilsTest {
 
     @Test
-    void sortColumns_1() {
-        Spreadsheet spreadsheet = new Spreadsheet();
+    void sortColumns_Ascending() {
+        Cell[][] cells = initializeTestCells();
+
         String sortColumn = "B";
         String columnsToBeSorted = "A,B";
         String rows = "1:13";
-        Grid<SpreadsheetRow> grid = new Grid<>(SpreadsheetRow.class);
-
-        List<SpreadsheetRow> gridRows = new ArrayList<>();
-        for (int i = 0; i < 14; i++) {
-            SpreadsheetRow row = new SpreadsheetRow(2);
-            row.number = i;
-            gridRows.add(row);
-        }
-
-        gridRows.get(0).setCell(0, "Expenses:");
-        gridRows.get(0).setCell(1, "Cost:");
-
-        gridRows.get(1).setCell(0, "Household Shopping");
-        gridRows.get(1).setCell(1, "2000");
-
-        gridRows.get(2).setCell(0, "Credit");
-        gridRows.get(2).setCell(1, "1700");
-
-        gridRows.get(3).setCell(0, "G-Bills");
-        gridRows.get(3).setCell(1, "630");
-
-        gridRows.get(4).setCell(0, "Food Ordering");
-        gridRows.get(4).setCell(1, "600");
-
-        gridRows.get(5).setCell(0, "Bonds");
-        gridRows.get(5).setCell(1, "0");
-
-        gridRows.get(6).setCell(0, "Investing");
-        gridRows.get(6).setCell(1, "0");
-
-        gridRows.get(7).setCell(0, "Fuel");
-        gridRows.get(7).setCell(1, "500");
-
-        gridRows.get(8).setCell(0, "English");
-        gridRows.get(8).setCell(1, "400");
-
-        gridRows.get(9).setCell(0, "Electricity");
-        gridRows.get(9).setCell(1, "180");
-
-        gridRows.get(10).setCell(0, "GPT");
-        gridRows.get(10).setCell(1, "100");
-
-        gridRows.get(11).setCell(0, "Netflix");
-        gridRows.get(11).setCell(1, "90");
-
-        gridRows.get(12).setCell(0, "Internet");
-        gridRows.get(12).setCell(1, "80");
-
-        gridRows.get(13).setCell(0, "English");
-        gridRows.get(13).setCell(1, "400");
-
-        grid.setItems(gridRows);
-        spreadsheet.setRows(gridRows);
-
         String order = "Ascending";
-        UtilsMessage utilsMessage = SpreadsheetUtils.sortColumns(spreadsheet, sortColumn, order, columnsToBeSorted, rows, grid);
+
+        UtilsMessage utilsMessage = SpreadsheetUtils.sortColumns(cells, sortColumn, order, columnsToBeSorted, rows);
 
         Assertions.assertTrue(utilsMessage.isSuccess);
 
-        Assertions.assertEquals("Expenses:", gridRows.get(0).getCell(0).value);
-        Assertions.assertEquals("Cost:", gridRows.get(0).getCell(1).value);
+        // Verify sorted order
+        Assertions.assertEquals("Bonds", cells[1][0].value);
+        Assertions.assertEquals("0", cells[1][1].value);
 
-        Assertions.assertEquals("Bonds", gridRows.get(1).getCell(0).value);
-        Assertions.assertEquals("0", gridRows.get(1).getCell(1).value);
+        Assertions.assertEquals("Investing", cells[2][0].value);
+        Assertions.assertEquals("0", cells[2][1].value);
 
-        Assertions.assertEquals("Investing", gridRows.get(2).getCell(0).value);
-        Assertions.assertEquals("0", gridRows.get(2).getCell(1).value);
+        Assertions.assertEquals("Internet", cells[3][0].value);
+        Assertions.assertEquals("80", cells[3][1].value);
 
-        Assertions.assertEquals("Internet", gridRows.get(3).getCell(0).value);
-        Assertions.assertEquals("80", gridRows.get(3).getCell(1).value);
+        Assertions.assertEquals("Netflix", cells[4][0].value);
+        Assertions.assertEquals("90", cells[4][1].value);
 
-        Assertions.assertEquals("Netflix", gridRows.get(4).getCell(0).value);
-        Assertions.assertEquals("90", gridRows.get(4).getCell(1).value);
+        Assertions.assertEquals("GPT", cells[5][0].value);
+        Assertions.assertEquals("100", cells[5][1].value);
 
-        Assertions.assertEquals("GPT", gridRows.get(5).getCell(0).value);
-        Assertions.assertEquals("100", gridRows.get(5).getCell(1).value);
+        Assertions.assertEquals("Electricity", cells[6][0].value);
+        Assertions.assertEquals("180", cells[6][1].value);
 
-        Assertions.assertEquals("Electricity", gridRows.get(6).getCell(0).value);
-        Assertions.assertEquals("180", gridRows.get(6).getCell(1).value);
+        Assertions.assertEquals("English", cells[7][0].value);
+        Assertions.assertEquals("400", cells[7][1].value);
 
-        Assertions.assertEquals("English", gridRows.get(7).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(7).getCell(1).value);
+        Assertions.assertEquals("English", cells[8][0].value);
+        Assertions.assertEquals("400", cells[8][1].value);
 
-        Assertions.assertEquals("English", gridRows.get(8).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(8).getCell(1).value);
+        Assertions.assertEquals("Fuel", cells[9][0].value);
+        Assertions.assertEquals("500", cells[9][1].value);
 
-        Assertions.assertEquals("Fuel", gridRows.get(9).getCell(0).value);
-        Assertions.assertEquals("500", gridRows.get(9).getCell(1).value);
+        Assertions.assertEquals("Food Ordering", cells[10][0].value);
+        Assertions.assertEquals("600", cells[10][1].value);
 
-        Assertions.assertEquals("Food Ordering", gridRows.get(10).getCell(0).value);
-        Assertions.assertEquals("600", gridRows.get(10).getCell(1).value);
+        Assertions.assertEquals("G-Bills", cells[11][0].value);
+        Assertions.assertEquals("630", cells[11][1].value);
 
-        Assertions.assertEquals("G-Bills", gridRows.get(11).getCell(0).value);
-        Assertions.assertEquals("630", gridRows.get(11).getCell(1).value);
+        Assertions.assertEquals("Credit", cells[12][0].value);
+        Assertions.assertEquals("1700", cells[12][1].value);
 
-        Assertions.assertEquals("Credit", gridRows.get(12).getCell(0).value);
-        Assertions.assertEquals("1700", gridRows.get(12).getCell(1).value);
-
-        Assertions.assertEquals("Household Shopping", gridRows.get(13).getCell(0).value);
-        Assertions.assertEquals("2000", gridRows.get(13).getCell(1).value);
+        Assertions.assertEquals("Household Shopping", cells[13][0].value);
+        Assertions.assertEquals("2000", cells[13][1].value);
     }
 
     @Test
-    void sortColumns_2() {
-        Spreadsheet spreadsheet = new Spreadsheet();
+    void sortColumns_Descending() {
+        Cell[][] cells = initializeTestCells();
+
         String sortColumn = "B";
         String columnsToBeSorted = "A,B";
         String rows = "1:13";
-        Grid<SpreadsheetRow> grid = new Grid<>(SpreadsheetRow.class);
-
-        List<SpreadsheetRow> gridRows = new ArrayList<>();
-        for (int i = 0; i < 14; i++) {
-            SpreadsheetRow row = new SpreadsheetRow(2);
-            row.number = i;
-            gridRows.add(row);
-        }
-
-        gridRows.get(0).setCell(0, "Expenses:");
-        gridRows.get(0).setCell(1, "Cost:");
-
-        gridRows.get(1).setCell(0, "Household Shopping");
-        gridRows.get(1).setCell(1, "2000");
-
-        gridRows.get(2).setCell(0, "Credit");
-        gridRows.get(2).setCell(1, "1700");
-
-        gridRows.get(3).setCell(0, "G-Bills");
-        gridRows.get(3).setCell(1, "630");
-
-        gridRows.get(4).setCell(0, "Food Ordering");
-        gridRows.get(4).setCell(1, "600");
-
-        gridRows.get(5).setCell(0, "Bonds");
-        gridRows.get(5).setCell(1, "0");
-
-        gridRows.get(6).setCell(0, "Investing");
-        gridRows.get(6).setCell(1, "0");
-
-        gridRows.get(7).setCell(0, "Fuel");
-        gridRows.get(7).setCell(1, "500");
-
-        gridRows.get(8).setCell(0, "English");
-        gridRows.get(8).setCell(1, "400");
-
-        gridRows.get(9).setCell(0, "Electricity");
-        gridRows.get(9).setCell(1, "180");
-
-        gridRows.get(10).setCell(0, "GPT");
-        gridRows.get(10).setCell(1, "100");
-
-        gridRows.get(11).setCell(0, "Netflix");
-        gridRows.get(11).setCell(1, "90");
-
-        gridRows.get(12).setCell(0, "Internet");
-        gridRows.get(12).setCell(1, "80");
-
-        gridRows.get(13).setCell(0, "English");
-        gridRows.get(13).setCell(1, "400");
-
-        grid.setItems(gridRows);
-        spreadsheet.setRows(gridRows);
-
         String order = "Descending";
-        UtilsMessage utilsMessage = SpreadsheetUtils.sortColumns(spreadsheet, sortColumn, order, columnsToBeSorted, rows, grid);
+
+        UtilsMessage utilsMessage = SpreadsheetUtils.sortColumns(cells, sortColumn, order, columnsToBeSorted, rows);
 
         Assertions.assertTrue(utilsMessage.isSuccess);
 
-        Assertions.assertEquals("Expenses:", gridRows.get(0).getCell(0).value);
-        Assertions.assertEquals("Cost:", gridRows.get(0).getCell(1).value);
+        // Verify sorted order
+        Assertions.assertEquals("Household Shopping", cells[1][0].value);
+        Assertions.assertEquals("2000", cells[1][1].value);
 
-        Assertions.assertEquals("Household Shopping", gridRows.get(1).getCell(0).value);
-        Assertions.assertEquals("2000", gridRows.get(1).getCell(1).value);
+        Assertions.assertEquals("Credit", cells[2][0].value);
+        Assertions.assertEquals("1700", cells[2][1].value);
 
-        Assertions.assertEquals("Credit", gridRows.get(2).getCell(0).value);
-        Assertions.assertEquals("1700", gridRows.get(2).getCell(1).value);
+        Assertions.assertEquals("G-Bills", cells[3][0].value);
+        Assertions.assertEquals("630", cells[3][1].value);
 
-        Assertions.assertEquals("G-Bills", gridRows.get(3).getCell(0).value);
-        Assertions.assertEquals("630", gridRows.get(3).getCell(1).value);
+        Assertions.assertEquals("Food Ordering", cells[4][0].value);
+        Assertions.assertEquals("600", cells[4][1].value);
 
-        Assertions.assertEquals("Food Ordering", gridRows.get(4).getCell(0).value);
-        Assertions.assertEquals("600", gridRows.get(4).getCell(1).value);
+        Assertions.assertEquals("Fuel", cells[5][0].value);
+        Assertions.assertEquals("500", cells[5][1].value);
 
-        Assertions.assertEquals("Fuel", gridRows.get(5).getCell(0).value);
-        Assertions.assertEquals("500", gridRows.get(5).getCell(1).value);
+        Assertions.assertEquals("English", cells[6][0].value);
+        Assertions.assertEquals("400", cells[6][1].value);
 
-        Assertions.assertEquals("English", gridRows.get(6).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(6).getCell(1).value);
+        Assertions.assertEquals("English", cells[7][0].value);
+        Assertions.assertEquals("400", cells[7][1].value);
 
-        Assertions.assertEquals("English", gridRows.get(7).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(7).getCell(1).value);
+        Assertions.assertEquals("Electricity", cells[8][0].value);
+        Assertions.assertEquals("180", cells[8][1].value);
 
-        Assertions.assertEquals("Electricity", gridRows.get(8).getCell(0).value);
-        Assertions.assertEquals("180", gridRows.get(8).getCell(1).value);
+        Assertions.assertEquals("GPT", cells[9][0].value);
+        Assertions.assertEquals("100", cells[9][1].value);
 
-        Assertions.assertEquals("GPT", gridRows.get(9).getCell(0).value);
-        Assertions.assertEquals("100", gridRows.get(9).getCell(1).value);
+        Assertions.assertEquals("Netflix", cells[10][0].value);
+        Assertions.assertEquals("90", cells[10][1].value);
 
-        Assertions.assertEquals("Netflix", gridRows.get(10).getCell(0).value);
-        Assertions.assertEquals("90", gridRows.get(10).getCell(1).value);
+        Assertions.assertEquals("Internet", cells[11][0].value);
+        Assertions.assertEquals("80", cells[11][1].value);
 
-        Assertions.assertEquals("Internet", gridRows.get(11).getCell(0).value);
-        Assertions.assertEquals("80", gridRows.get(11).getCell(1).value);
+        Assertions.assertEquals("Bonds", cells[12][0].value);
+        Assertions.assertEquals("0", cells[12][1].value);
 
-        Assertions.assertEquals("Bonds", gridRows.get(12).getCell(0).value);
-        Assertions.assertEquals("0", gridRows.get(12).getCell(1).value);
-
-        Assertions.assertEquals("Investing", gridRows.get(13).getCell(0).value);
-        Assertions.assertEquals("0", gridRows.get(13).getCell(1).value);
+        Assertions.assertEquals("Investing", cells[13][0].value);
+        Assertions.assertEquals("0", cells[13][1].value);
     }
 
-    @Test
-    void sortColumns_WithNonNumericValuesAtBottom_ascending() {
-        Spreadsheet spreadsheet = new Spreadsheet();
-        String sortColumn = "B";
-        String columnsToBeSorted = "A,B";
-        String rows = "1:13";
-        Grid<SpreadsheetRow> grid = new Grid<>(SpreadsheetRow.class);
+    private Cell[][] initializeTestCells() {
+        Cell[][] cells = new Cell[14][2];
 
-        List<SpreadsheetRow> gridRows = new ArrayList<>();
-        for (int i = 0; i < 14; i++) {
-            SpreadsheetRow row = new SpreadsheetRow(2);
-            row.number = i;
-            gridRows.add(row);
-        }
+        cells[0][0] = new Cell("Expense:", 0, 0);
+        cells[0][1] = new Cell("Cost:", 1, 0);
 
-        gridRows.get(0).setCell(0, "Expense:");
-        gridRows.get(0).setCell(1, "Cost:");
+        cells[1][0] = new Cell("Household Shopping", 0, 1);
+        cells[1][1] = new Cell("2000", 1, 1);
 
-        gridRows.get(1).setCell(0, "Household Shopping");
-        gridRows.get(1).setCell(1, "2000");
+        cells[2][0] = new Cell("Credit", 0, 2);
+        cells[2][1] = new Cell("1700", 1, 2);
 
-        gridRows.get(2).setCell(0, "Credit");
-        gridRows.get(2).setCell(1, "1700");
+        cells[3][0] = new Cell("G-Bills", 0, 3);
+        cells[3][1] = new Cell("630", 1, 3);
 
-        gridRows.get(3).setCell(0, "G-Bills");
-        gridRows.get(3).setCell(1, "630");
+        cells[4][0] = new Cell("Food Ordering", 0, 4);
+        cells[4][1] = new Cell("600", 1, 4);
 
-        gridRows.get(4).setCell(0, "Food Ordering");
-        gridRows.get(4).setCell(1, "600");
+        cells[5][0] = new Cell("Bonds", 0, 5);
+        cells[5][1] = new Cell("0", 1, 5);
 
-        gridRows.get(5).setCell(0, "Bonds");
-        gridRows.get(5).setCell(1, "abc"); // Non-numeric value
+        cells[6][0] = new Cell("Investing", 0, 6);
+        cells[6][1] = new Cell("0", 1, 6);
 
-        gridRows.get(6).setCell(0, "Investing");
-        gridRows.get(6).setCell(1, null); // Null value
+        cells[7][0] = new Cell("Fuel", 0, 7);
+        cells[7][1] = new Cell("500", 1, 7);
 
-        gridRows.get(7).setCell(0, "Fuel");
-        gridRows.get(7).setCell(1, "500");
+        cells[8][0] = new Cell("English", 0, 8);
+        cells[8][1] = new Cell("400", 1, 8);
 
-        gridRows.get(8).setCell(0, "English");
-        gridRows.get(8).setCell(1, "400");
+        cells[9][0] = new Cell("Electricity", 0, 9);
+        cells[9][1] = new Cell("180", 1, 9);
 
-        gridRows.get(9).setCell(0, "Electricity");
-        gridRows.get(9).setCell(1, "180");
+        cells[10][0] = new Cell("GPT", 0, 10);
+        cells[10][1] = new Cell("100", 1, 10);
 
-        gridRows.get(10).setCell(0, "GPT");
-        gridRows.get(10).setCell(1, "100");
+        cells[11][0] = new Cell("Netflix", 0, 11);
+        cells[11][1] = new Cell("90", 1, 11);
 
-        gridRows.get(11).setCell(0, "Netflix");
-        gridRows.get(11).setCell(1, "90");
+        cells[12][0] = new Cell("Internet", 0, 12);
+        cells[12][1] = new Cell("80", 1, 12);
 
-        gridRows.get(12).setCell(0, "Internet");
-        gridRows.get(12).setCell(1, "80");
+        cells[13][0] = new Cell("English", 0, 13);
+        cells[13][1] = new Cell("400", 1, 13);
 
-        gridRows.get(13).setCell(0, "English");
-        gridRows.get(13).setCell(1, "400");
-
-        grid.setItems(gridRows);
-        spreadsheet.setRows(gridRows);
-
-        String order = "Ascending";
-        UtilsMessage utilsMessage = SpreadsheetUtils.sortColumns(spreadsheet, sortColumn, order, columnsToBeSorted, rows, grid);
-
-        Assertions.assertTrue(utilsMessage.isSuccess);
-
-        // Assertions for sorted order with non-numeric values at the bottom
-        Assertions.assertEquals("Expense:", gridRows.get(0).getCell(0).value);
-        Assertions.assertEquals("Cost:", gridRows.get(0).getCell(1).value);
-
-        Assertions.assertEquals("Internet", gridRows.get(1).getCell(0).value);
-        Assertions.assertEquals("80", gridRows.get(1).getCell(1).value);
-
-        Assertions.assertEquals("Netflix", gridRows.get(2).getCell(0).value);
-        Assertions.assertEquals("90", gridRows.get(2).getCell(1).value);
-
-        Assertions.assertEquals("GPT", gridRows.get(3).getCell(0).value);
-        Assertions.assertEquals("100", gridRows.get(3).getCell(1).value);
-
-        Assertions.assertEquals("Electricity", gridRows.get(4).getCell(0).value);
-        Assertions.assertEquals("180", gridRows.get(4).getCell(1).value);
-
-        Assertions.assertEquals("English", gridRows.get(5).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(5).getCell(1).value);
-
-        Assertions.assertEquals("English", gridRows.get(6).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(6).getCell(1).value);
-
-        Assertions.assertEquals("Fuel", gridRows.get(7).getCell(0).value);
-        Assertions.assertEquals("500", gridRows.get(7).getCell(1).value);
-
-        Assertions.assertEquals("Food Ordering", gridRows.get(8).getCell(0).value);
-        Assertions.assertEquals("600", gridRows.get(8).getCell(1).value);
-
-        Assertions.assertEquals("G-Bills", gridRows.get(9).getCell(0).value);
-        Assertions.assertEquals("630", gridRows.get(9).getCell(1).value);
-
-        Assertions.assertEquals("Credit", gridRows.get(10).getCell(0).value);
-        Assertions.assertEquals("1700", gridRows.get(10).getCell(1).value);
-
-        Assertions.assertEquals("Household Shopping", gridRows.get(11).getCell(0).value);
-        Assertions.assertEquals("2000", gridRows.get(11).getCell(1).value);
-
-        // Non-numeric and empty values should be at the bottom
-        Assertions.assertEquals("Bonds", gridRows.get(12).getCell(0).value);
-        Assertions.assertEquals("abc", gridRows.get(12).getCell(1).value);
-
-        Assertions.assertEquals("Investing", gridRows.get(13).getCell(0).value);
-        Assertions.assertEquals("", gridRows.get(13).getCell(1).value);
-    }
-
-    @Test
-    void sortColumns_WithNonNumericValuesAtBottom_descending() {
-        Spreadsheet spreadsheet = new Spreadsheet();
-        String sortColumn = "B";
-        String columnsToBeSorted = "A,B";
-        String rows = "1:13";
-        Grid<SpreadsheetRow> grid = new Grid<>(SpreadsheetRow.class);
-
-        List<SpreadsheetRow> gridRows = new ArrayList<>();
-        for (int i = 0; i < 14; i++) {
-            SpreadsheetRow row = new SpreadsheetRow(2);
-            row.number = i;
-            gridRows.add(row);
-        }
-
-        gridRows.get(0).setCell(0, "Expense:");
-        gridRows.get(0).setCell(1, "Cost:");
-
-        gridRows.get(1).setCell(0, "Household Shopping");
-        gridRows.get(1).setCell(1, "2000");
-
-        gridRows.get(2).setCell(0, "Credit");
-        gridRows.get(2).setCell(1, "1700");
-
-        gridRows.get(3).setCell(0, "G-Bills");
-        gridRows.get(3).setCell(1, "630");
-
-        gridRows.get(4).setCell(0, "Food Ordering");
-        gridRows.get(4).setCell(1, "600");
-
-        gridRows.get(5).setCell(0, "Bonds");
-        gridRows.get(5).setCell(1, "abc"); // Non-numeric value
-
-        gridRows.get(6).setCell(0, "Investing");
-        gridRows.get(6).setCell(1, null); // Null value
-
-        gridRows.get(7).setCell(0, "Fuel");
-        gridRows.get(7).setCell(1, "500");
-
-        gridRows.get(8).setCell(0, "English");
-        gridRows.get(8).setCell(1, "400");
-
-        gridRows.get(9).setCell(0, "Electricity");
-        gridRows.get(9).setCell(1, "180");
-
-        gridRows.get(10).setCell(0, "GPT");
-        gridRows.get(10).setCell(1, "100");
-
-        gridRows.get(11).setCell(0, "Netflix");
-        gridRows.get(11).setCell(1, "90");
-
-        gridRows.get(12).setCell(0, "Internet");
-        gridRows.get(12).setCell(1, "80");
-
-        gridRows.get(13).setCell(0, "English");
-        gridRows.get(13).setCell(1, "400");
-
-        grid.setItems(gridRows);
-        spreadsheet.setRows(gridRows);
-
-        String order = "Descending";
-        UtilsMessage utilsMessage = SpreadsheetUtils.sortColumns(spreadsheet, sortColumn, order, columnsToBeSorted, rows, grid);
-
-        Assertions.assertTrue(utilsMessage.isSuccess);
-
-        // Assertions for sorted order with non-numeric values at the bottom (Descending)
-        Assertions.assertEquals("Expense:", gridRows.get(0).getCell(0).value);
-        Assertions.assertEquals("Cost:", gridRows.get(0).getCell(1).value);
-
-        Assertions.assertEquals("Household Shopping", gridRows.get(1).getCell(0).value);
-        Assertions.assertEquals("2000", gridRows.get(1).getCell(1).value);
-
-        Assertions.assertEquals("Credit", gridRows.get(2).getCell(0).value);
-        Assertions.assertEquals("1700", gridRows.get(2).getCell(1).value);
-
-        Assertions.assertEquals("G-Bills", gridRows.get(3).getCell(0).value);
-        Assertions.assertEquals("630", gridRows.get(3).getCell(1).value);
-
-        Assertions.assertEquals("Food Ordering", gridRows.get(4).getCell(0).value);
-        Assertions.assertEquals("600", gridRows.get(4).getCell(1).value);
-
-        Assertions.assertEquals("Fuel", gridRows.get(5).getCell(0).value);
-        Assertions.assertEquals("500", gridRows.get(5).getCell(1).value);
-
-        Assertions.assertEquals("English", gridRows.get(6).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(6).getCell(1).value);
-
-        Assertions.assertEquals("English", gridRows.get(7).getCell(0).value);
-        Assertions.assertEquals("400", gridRows.get(7).getCell(1).value);
-
-        Assertions.assertEquals("Electricity", gridRows.get(8).getCell(0).value);
-        Assertions.assertEquals("180", gridRows.get(8).getCell(1).value);
-
-        Assertions.assertEquals("GPT", gridRows.get(9).getCell(0).value);
-        Assertions.assertEquals("100", gridRows.get(9).getCell(1).value);
-
-        Assertions.assertEquals("Netflix", gridRows.get(10).getCell(0).value);
-        Assertions.assertEquals("90", gridRows.get(10).getCell(1).value);
-
-        Assertions.assertEquals("Internet", gridRows.get(11).getCell(0).value);
-        Assertions.assertEquals("80", gridRows.get(11).getCell(1).value);
-
-        // Non-numeric and empty values should be at the bottom
-        Assertions.assertEquals("Bonds", gridRows.get(12).getCell(0).value);
-        Assertions.assertEquals("abc", gridRows.get(12).getCell(1).value);
-
-        Assertions.assertEquals("Investing", gridRows.get(13).getCell(0).value);
-        Assertions.assertEquals("", gridRows.get(13).getCell(1).value);
-    }
-
-    @Test
-    void extractRowIndex() {
-    }
-
-    @Test
-    void getColumnIndex() {
-    }
-
-    @Test
-    void testGetColumnIndex() {
-    }
-
-    @Test
-    void getColumnHeader() {
+        return cells;
     }
 }

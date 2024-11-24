@@ -11,6 +11,85 @@ import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import java.util.*;
 
 public class SpreadsheetUtils {
+    public static UtilsMessage sortColumns(Cell[][] cells, String sortColumn, String order, String columnsToBeSorted, String rows) {
+        UtilsMessage utilsMessage = new UtilsMessage();
+        String[] colonSeparated = rows.split(":");
+
+        if (colonSeparated.length == 2) {
+            try {
+                Integer start = Integer.parseInt(colonSeparated[0].replaceAll(".*?(\\d+)$", "$1"));
+                Integer end = Integer.parseInt(colonSeparated[1].replaceAll(".*?(\\d+)$", "$1"));
+
+                if (start < 0) {
+                    start = 0;
+                }
+
+                if (end > cells.length - 1) {
+                    end = cells.length - 1;
+                }
+
+                if (start > end) {
+                    throw new RuntimeException("Incorrect rows");
+                }
+
+                // Get the column index to sort by
+                int sortColumnIndex = getColumnIndex(sortColumn);
+
+                if (sortColumnIndex < 0 || sortColumnIndex >= cells[0].length) {
+                    throw new RuntimeException("Invalid sort column: " + sortColumn);
+                }
+
+                // Collect rows within the range
+                List<Cell[]> targetRows = new ArrayList<>();
+                for (int i = start; i <= end; i++) {
+                    targetRows.add(cells[i]);
+                }
+
+                // Define the comparator for sorting
+                Comparator<Cell[]> comparator = (row1, row2) -> {
+                    Cell cell1 = row1[sortColumnIndex];
+                    Cell cell2 = row2[sortColumnIndex];
+                    String val1 = cell1 != null ? cell1.value : null;
+                    String val2 = cell2 != null ? cell2.value : null;
+
+                    boolean isVal1Integer = isInteger(val1);
+                    boolean isVal2Integer = isInteger(val2);
+
+                    if (!isVal1Integer && !isVal2Integer) {
+                        return 0;
+                    } else if (!isVal1Integer) {
+                        return 1;
+                    } else if (!isVal2Integer) {
+                        return -1;
+                    } else {
+                        int comparison = Integer.compare(Integer.parseInt(val1), Integer.parseInt(val2));
+                        return "Descending".equalsIgnoreCase(order) ? -comparison : comparison;
+                    }
+                };
+
+                // Sort the rows
+                targetRows.sort(comparator);
+
+                // Apply the sorted rows back to the original array
+                int index = start;
+                for (Cell[] sortedRow : targetRows) {
+                    cells[index] = sortedRow;
+                    index++;
+                }
+
+                utilsMessage.message = "Sort applied!";
+                utilsMessage.isSuccess = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                utilsMessage.message = "An error occurred while sorting: " + e.getMessage();
+                utilsMessage.isError = true;
+            }
+        } else {
+            utilsMessage.message = "Invalid sort configuration!";
+            utilsMessage.isError = true;
+        }
+        return utilsMessage;
+    }
     public static UtilsMessage sortColumns(Spreadsheet spreadsheet, String sortColumn, String order, String columnsToBeSorted, String rows, Grid grid) {
         UtilsMessage utilsMessage = new UtilsMessage();
         String[] colonSeparated = rows.split(":");

@@ -28,9 +28,9 @@ import java.util.stream.Collectors;
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.*;
 
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
+    public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private Spreadsheet spreadsheet;
     private Grid<SpreadsheetRow> grid;
-    public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private String selectedColumn;
     private final SpreadsheetService service;
     private static final int MAX_RECURSION_DEPTH = 100;
