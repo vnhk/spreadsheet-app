@@ -17,6 +17,7 @@ public class Cell {
     public String value = "";
     //internalValueIfFunction to be visible on click
     public String functionName;
+    public String htmlContent;
     private String functionValue;
     public boolean isFunction;
     private Map<Integer, String> relatedCells = new HashMap<>();
