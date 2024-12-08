@@ -331,23 +331,23 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         SubMenu stylingSubMenu = stylingMenu.getSubMenu();
 
         boldMenuItem = stylingSubMenu.addItem("Bold", event -> {
-            applyStyleToFocusedCell("bold");
+            applyStyle("bold");
         });
 
         italicMenuItem = stylingSubMenu.addItem("Italic", event -> {
-            applyStyleToFocusedCell("italic");
+            applyStyle("italic");
         });
 
         underlineMenuItem = stylingSubMenu.addItem("Underline", event -> {
-            applyStyleToFocusedCell("underline");
+            applyStyle("underline");
         });
 
         linkMenuItem = stylingSubMenu.addItem("Add Link", event -> {
-            applyLinkToFocusedCell();
+            applyLink();
         });
 
         imageMenuItem = stylingSubMenu.addItem("Insert Image", event -> {
-            insertImageInFocusedCell();
+            insertImage();
         });
     }
 
@@ -1007,44 +1007,78 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         return sb.toString();
     }
 
-    private void applyStyleToFocusedCell(String style) {
-        if (focusedCell == null) {
-            showErrorNotification("No cell is focused.");
-            return;
-        }
+    private void applyStyle(String style) {
         String openTag = "";
         String closeTag = "";
         switch (style) {
-            case "bold":
+            case "bold" -> {
                 openTag = "<b>";
                 closeTag = "</b>";
-                break;
-            case "italic":
+            }
+            case "italic" -> {
                 openTag = "<i>";
                 closeTag = "</i>";
-                break;
-            case "underline":
+            }
+            case "underline" -> {
                 openTag = "<u>";
                 closeTag = "</u>";
-                break;
-            default:
+            }
+            default -> {
                 showErrorNotification("Unknown style: " + style);
                 return;
+            }
         }
-        String content = focusedCell.htmlContent != null ? focusedCell.htmlContent : "";
-        // Avoid duplicating tags if they already exist
-        if (!content.contains(openTag)) {
-            focusedCell.htmlContent = openTag + content + closeTag;
+
+        if (selectedCells.size() != 0) {
+            for (Cell selectedCell : selectedCells) {
+                String content = selectedCell.htmlContent != null ? selectedCell.htmlContent : "";
+                // Avoid duplicating tags if they already exist
+                if (!content.contains(openTag)) {
+                    selectedCell.htmlContent = openTag + content + closeTag;
+                }
+            }
+
+        } else {
+            if (focusedCell == null) {
+                showErrorNotification("No cell is focused or selected!");
+                return;
+            }
+
+            String content = focusedCell.htmlContent != null ? focusedCell.htmlContent : "";
+            // Avoid duplicating tags if they already exist
+            if (!content.contains(openTag)) {
+                focusedCell.htmlContent = openTag + content + closeTag;
+            }
         }
+
         refreshTable();
-        showSuccessNotification("Style applied to focused cell.");
+        showSuccessNotification("Style applied to focused (selected) cell(s).");
     }
 
-    private void applyLinkToFocusedCell() {
+    public Cell getSelectedOrFocusedCell() {
+        if (focusedCell == null && selectedCells.size() == 0) {
+            showErrorNotification("No cell is focused (selected).");
+            return null;
+        }
+
+        if (selectedCells.size() > 1) {
+            showErrorNotification("More than one cell selected!");
+            return null;
+        }
+
+        if (selectedCells.size() == 1) {
+            return selectedCells.iterator().next();
+        } else {
+            return focusedCell;
+        }
+    }
+
+    private void applyLink() {
+        Cell focusedCell = getSelectedOrFocusedCell();
         if (focusedCell == null) {
-            showErrorNotification("No cell is focused.");
             return;
         }
+
         // Show a dialog to get the URL
         Dialog dialog = new Dialog();
         dialog.setWidth("400px");
@@ -1069,11 +1103,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         dialog.open();
     }
 
-    private void insertImageInFocusedCell() {
+    private void insertImage() {
+        Cell focusedCell = getSelectedOrFocusedCell();
         if (focusedCell == null) {
-            showErrorNotification("No cell is focused.");
             return;
         }
+
         // Show a dialog to get the image URL
         Dialog dialog = new Dialog();
         dialog.setWidth("400px");
