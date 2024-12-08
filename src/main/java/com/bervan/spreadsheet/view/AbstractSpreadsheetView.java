@@ -466,11 +466,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                         const cell = event.target.closest('td');
                         if (cell && cell.id) {
                             if (event.shiftKey) {
-                                if (cell.style.backgroundColor === 'green') {
-                                    cell.style.backgroundColor = '';
+                                if (cell.classList.contains('selected-cell')) {
+                                    cell.classList.remove('selected-cell');
                                     $0.$server.removeSelectedCell(cell.id);
                                 } else {
-                                    cell.style.backgroundColor = 'green';
+                                    cell.classList.add('selected-cell');
                                     $0.$server.addSelectedCell(cell.id);
                                 }
                             } else if (cell.hasAttribute('contenteditable')) {
@@ -655,8 +655,13 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
                 tableBuilder.append("<td ")
                         .append("id='").append(cellId).append("' ")
-                        .append("contenteditable='").append(isEditable).append("' ")
-                        .append("class='spreadsheet-cell'");
+                        .append("contenteditable='").append(isEditable).append("' ");
+
+                if (selectedCells.contains(cell)) {
+                    tableBuilder.append("class='spreadsheet-cell selected-cell'");
+                } else {
+                    tableBuilder.append("class='spreadsheet-cell'");
+                }
 
                 // If the cell is in changedCellIds, add style
                 if (changedCellIds != null && changedCellIds.contains(cellId)) {
