@@ -2,12 +2,15 @@ package com.bervan.spreadsheet.service;
 
 import com.bervan.common.service.AuthService;
 import com.bervan.common.service.BaseService;
+import com.bervan.ieentities.ExcelIEEntity;
 import com.bervan.spreadsheet.model.Spreadsheet;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class SpreadsheetService implements BaseService<UUID, Spreadsheet> {
@@ -37,6 +40,11 @@ public class SpreadsheetService implements BaseService<UUID, Spreadsheet> {
     public void delete(Spreadsheet item) {
         item.setDeleted(true);
         repository.save(item);
+    }
+
+    @Override
+    public void saveIfValid(List<? extends ExcelIEEntity> objects) {
+        throw new RuntimeException("Not supported yet!");
     }
 
     @PostFilter("(T(com.bervan.common.service.AuthService).hasAccess(filterObject.owners))")
