@@ -110,8 +110,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 // Rebuild cell map
                 rebuildCellMap();
 
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                logger.error(e);
                 // Initialize default values on error
                 rows = 2;
                 columns = 10;
