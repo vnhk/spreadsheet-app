@@ -232,7 +232,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 showErrorNotification(utilsMessage.message);
             }
         });
-        okButton.setClassName("option-button");
+        okButton.addClassName("option-button");
         // Add components to dialog
         VerticalLayout verticalLayout = new VerticalLayout();
         verticalLayout.add(getDialogTopBarLayout(dialog), columnsField, rowsField, columnDropdown, orderDropdown, okButton);
@@ -768,7 +768,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Button okButton = new Button("Ok", e -> {
             dialog.close();
         });
-        okButton.setClassName("option-button");
+        okButton.addClassName("option-button");
 
         // Add components to dialog
         VerticalLayout verticalLayout = new VerticalLayout();
@@ -940,7 +940,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         layout.add(instructions, textArea);
 
         Button closeButton = new Button("Close", e -> dialog.close());
-        closeButton.setClassName("option-button");
+        closeButton.addClassName("option-button");
 
         layout.add(closeButton);
 
