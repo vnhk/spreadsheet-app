@@ -2,7 +2,6 @@ package com.bervan.spreadsheet.service;
 
 import com.bervan.common.search.SearchService;
 import com.bervan.common.service.BaseService;
-import com.bervan.ieentities.ExcelIEEntity;
 import com.bervan.spreadsheet.model.Spreadsheet;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
@@ -27,12 +26,6 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
     @Override
     public Spreadsheet save(Spreadsheet data) {
         return repository.save(data);
-    }
-
-    @Override
-    @PostFilter("(T(com.bervan.common.service.AuthService).hasAccess(filterObject.owners))")
-    public Set<Spreadsheet> load() {
-        return new HashSet<>(repository.findAll());
     }
 
     @Override
