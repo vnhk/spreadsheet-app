@@ -5,6 +5,7 @@ import com.bervan.history.model.HistoryField;
 import com.bervan.history.model.HistoryOwnerEntity;
 import com.bervan.history.model.HistorySupported;
 import jakarta.persistence.*;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -15,7 +16,6 @@ import java.util.UUID;
 @HistorySupported
 public class HistorySpreadsheet implements AbstractBaseHistoryEntity<UUID> {
     @Id
-    @GeneratedValue
     private UUID id;
     @HistoryField
     private String name;

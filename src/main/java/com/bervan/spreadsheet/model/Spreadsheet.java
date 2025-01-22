@@ -6,6 +6,7 @@ import com.bervan.common.model.VaadinTableColumn;
 import com.bervan.history.model.HistoryCollection;
 import com.bervan.history.model.HistorySupported;
 import jakarta.persistence.*;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -19,7 +20,6 @@ import static com.bervan.spreadsheet.utils.SpreadsheetUtils.shiftRowsInFunctions
 @HistorySupported
 public class Spreadsheet extends BervanBaseEntity<UUID> implements PersistableTableData<UUID> {
     @Id
-    @GeneratedValue
     private UUID id;
     @VaadinTableColumn(internalName = "name", displayName = "Name")
     private String name;
