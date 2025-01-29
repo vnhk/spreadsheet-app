@@ -1,11 +1,10 @@
 package com.bervan.spreadsheet.model;
 
-import com.bervan.history.model.AbstractBaseHistoryEntity;
+import com.bervan.common.model.BervanHistoryEntity;
 import com.bervan.history.model.HistoryField;
 import com.bervan.history.model.HistoryOwnerEntity;
 import com.bervan.history.model.HistorySupported;
 import jakarta.persistence.*;
-import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -14,7 +13,7 @@ import java.util.UUID;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @HistorySupported
-public class HistorySpreadsheet implements AbstractBaseHistoryEntity<UUID> {
+public class HistorySpreadsheet extends BervanHistoryEntity<UUID> {
     @Id
     private UUID id;
     @HistoryField
