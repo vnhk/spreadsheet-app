@@ -171,7 +171,7 @@ public class Spreadsheet extends BervanBaseEntity<UUID> implements PersistableTa
     }
 
     @Override
-    public Boolean getDeleted() {
+    public Boolean isDeleted() {
         return deleted;
     }
 
