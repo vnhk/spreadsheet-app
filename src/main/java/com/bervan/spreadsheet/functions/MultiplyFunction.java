@@ -1,7 +1,7 @@
 package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.Cell;
-import org.apache.commons.math3.exception.NotANumberException;
+
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class MultiplyFunction implements SpreadsheetFunction {
             for (int i = 0; i < params.size(); i++) {
                 try {
                     res *= getDouble(params, i);
-                } catch (NotANumberException e) {
+                } catch (NumberFormatException e) {
                     //we ignore it, because we want to make this function working for empty values
                 }
             }

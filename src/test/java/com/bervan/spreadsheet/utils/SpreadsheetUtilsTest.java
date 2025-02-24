@@ -6,7 +6,14 @@ import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 class SpreadsheetUtilsTest {
+
+    @Test
+    void uuid_test() {
+        Assertions.assertEquals(UUID.nameUUIDFromBytes("123456".getBytes()).toString(), "e10adc39-49ba-39ab-be56-e057f20f883e");
+    }
 
     @Test
     void sortColumns_Ascending() {

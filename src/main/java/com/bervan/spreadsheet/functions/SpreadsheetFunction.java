@@ -2,7 +2,7 @@ package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
-import org.apache.commons.math3.exception.NotANumberException;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +79,7 @@ public interface SpreadsheetFunction {
             }
             return val;
         } catch (Exception e) {
-            throw new NotANumberException();
+            throw new NumberFormatException();
         }
     }
 
