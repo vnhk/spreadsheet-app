@@ -24,14 +24,18 @@ public abstract class AbstractSpreadsheetsView extends AbstractTableView<UUID, S
     @Override
     protected Grid<Spreadsheet> getGrid() {
         Grid<Spreadsheet> grid = new Grid<>(Spreadsheet.class, false);
+        buildGridAutomatically(grid);
+
+        return grid;
+    }
+
+    @Override
+    protected void preColumnAutoCreation(Grid<Spreadsheet> grid) {
         grid.addComponentColumn(entity -> {
                     Icon linkIcon = new Icon(VaadinIcon.LINK);
                     linkIcon.getStyle().set("cursor", "pointer");
                     return new Anchor(ROUTE_NAME + "/" + entity.getName(), new HorizontalLayout(linkIcon));
                 }).setKey("link")
                 .setResizable(true);
-        buildGridAutomatically(grid);
-
-        return grid;
     }
 }
