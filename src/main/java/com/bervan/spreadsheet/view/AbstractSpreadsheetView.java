@@ -1,6 +1,7 @@
 package com.bervan.spreadsheet.view;
 
 import com.bervan.common.AbstractPageView;
+import com.bervan.common.BervanButton;
 import com.bervan.common.BervanTextField;
 import com.bervan.common.model.UtilsMessage;
 import com.bervan.common.service.AuthService;
@@ -765,10 +766,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Dialog dialog = new Dialog();
         dialog.setWidth("80vw");
 
-        Button okButton = new Button("Ok", e -> {
+        Button okButton = new BervanButton("Ok", e -> {
             dialog.close();
         });
-        okButton.addClassName("option-button");
 
         // Add components to dialog
         VerticalLayout verticalLayout = new VerticalLayout();
@@ -779,6 +779,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             String name = spreadsheetFunction.getName();
             String info = spreadsheetFunction.getInfo();
             Span infoSpan = new Span();
+            infoSpan.addClassName("spreadsheet-function-info");
             infoSpan.getElement().setProperty("innerHTML", info);
             verticalLayout.add(new Span(i + ") " + name), infoSpan);
             i++;
@@ -852,12 +853,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     @ClientCallable
     public void showSuccessNotification(String message) {
-        Notification.show(message);
+        showSuccessNotification(message);
     }
 
     @ClientCallable
     public void showErrorNotification(String message) {
-        Notification.show(message).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        showErrorNotification(message);
     }
 
     // Method to show the copy table dialog
