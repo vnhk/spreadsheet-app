@@ -25,8 +25,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.menubar.MenuBar;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -156,8 +154,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         helpMenuOptions(helpMenu);
 
         // Add the MenuBar and table to the layout
-        Button saveButton = new Button("Save");
-        saveButton.addClassName("option-button");
+        Button saveButton = new BervanButton("Save");
         saveButton.addClickListener(event -> {
             save();
         });
@@ -384,10 +381,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             spreadsheetEntity.setBody(body);
             spreadsheetRepository.save(spreadsheetEntity);
             reloadHistory();
-            Notification.show("Table saved successfully.");
+            showSuccessNotification("Table saved successfully.");
         } catch (IOException e) {
             e.printStackTrace();
-            Notification.show("Failed to save table.");
+            showErrorNotification("Failed to save table.");
         }
     }
 
@@ -462,7 +459,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         getElement().executeJs("""
                     const table = this.querySelector('table');
                     let focusedCellId = null;
-
+                
                     table.addEventListener('click', event => {
                         const cell = event.target.closest('td');
                         if (cell && cell.id) {
@@ -486,11 +483,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                                 let atLeastOneMarkedAlready = false;
                                 let atLeastOneNotMarkedAlready = false;
                                 let tdToSwitch = [];
-
+                
                                 for (let i = 0; i < allTd.length; i++) {
                                     if (allTd[i].id.startsWith(event.target.innerText)) {
                                         tdToSwitch.push(allTd[i]);
-
+                
                                         if (allTd[i].style.backgroundColor === 'green') {
                                             atLeastOneMarkedAlready = true;
                                         } else {
@@ -498,7 +495,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                                         }
                                     }
                                 }
-
+                
                                 for (let i = 0; i < tdToSwitch.length; i++) {
                                     if (atLeastOneNotMarkedAlready) {
                                         tdToSwitch[i].style.backgroundColor = 'green';
@@ -511,7 +508,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                             }
                         }
                     });
-
+                
                     table.addEventListener('focusout', event => {
                         const cell = event.target;
                         if (cell.hasAttribute('contenteditable')) {
@@ -520,7 +517,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                             $0.$server.updateCellValue(id, htmlContent);
                         }
                     });
-
+                
                     window.addEventListener('click', event => {
                         const cell = event.target.closest('td');
                         const menuBar = document.querySelector('vaadin-menu-bar');
@@ -556,7 +553,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     @ClientCallable
     public void cellFocusIn(String cellId) {
-        focusedCell = cellMap.get(cellId);
+        focusedCell = cellMap.get(cellId); // Find the focused cell by ID
+
+        if (focusedCell != null) {
+            if (focusedCell.isFunction) {
+                String formula = focusedCell.getFunctionValue();
+                updateCellInClient(focusedCell.cellId, formula);
+            }
+        }
     }
 
     private void initializeCells() {
@@ -716,7 +720,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 recalculateCell(cell);
             } catch (Exception e) {
                 e.printStackTrace();
-                Notification.show("Error in formula calculation.");
+                showErrorNotification("Error in formula calculation.");
             }
 
             // Update the cell in the client-side
@@ -853,12 +857,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     @ClientCallable
     public void showSuccessNotification(String message) {
-        showSuccessNotification(message);
+        super.showSuccessNotification(message);
     }
 
     @ClientCallable
     public void showErrorNotification(String message) {
-        showErrorNotification(message);
+        super.showErrorNotification(message);
     }
 
     // Method to show the copy table dialog
