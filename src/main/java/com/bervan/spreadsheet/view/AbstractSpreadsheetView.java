@@ -662,11 +662,20 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                         .append("id='").append(cellId).append("' ")
                         .append("contenteditable='").append(isEditable).append("' ");
 
-                if (selectedCells.contains(cell)) {
-                    tableBuilder.append("class='spreadsheet-cell selected-cell'");
+                if (cell.isFunction) {
+                    if (selectedCells.contains(cell)) {
+                        tableBuilder.append("class='spreadsheet-cell selected-cell spreadsheet-cell-function'");
+                    } else {
+                        tableBuilder.append("class='spreadsheet-cell spreadsheet-cell-function'");
+                    }
                 } else {
-                    tableBuilder.append("class='spreadsheet-cell'");
+                    if (selectedCells.contains(cell)) {
+                        tableBuilder.append("class='spreadsheet-cell selected-cell'");
+                    } else {
+                        tableBuilder.append("class='spreadsheet-cell'");
+                    }
                 }
+
 
                 // If the cell is in changedCellIds, add style
                 if (changedCellIds != null && changedCellIds.contains(cellId)) {
@@ -678,6 +687,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 if (cell.isFunction) {
                     cell.buildFunction(cell.getFunctionValue());
                 }
+
                 String val = cell.htmlContent != null ? cell.htmlContent : "";
                 tableBuilder.append(val);
                 tableBuilder.append("</td>");
