@@ -61,7 +61,7 @@ public interface SpreadsheetFunction {
         return rows.stream()
                 .flatMap(List::stream)
                 .filter(e -> param.contains(e.cellId))
-                .toList();
+                .findFirst().orElseThrow();
     }
 
     private static boolean startsWithCapitalsAndEndsWithNumber(String input) {
