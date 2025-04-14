@@ -726,10 +726,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
             // If value starts with '=', it's a function
             if (value.startsWith("=")) {
-                cell.setFunction(true);
+                cell.isFunction(true);
                 cell.buildFunction(value);
             } else {
-                cell.setFunction(false);
+                cell.isFunction(false);
                 cell.setFunctionName(null);
                 cell.setValue(value);
             }

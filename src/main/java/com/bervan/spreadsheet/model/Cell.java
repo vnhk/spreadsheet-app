@@ -26,7 +26,7 @@ public class Cell {
     private String functionName;
     private String htmlContent;
     private String functionValue;
-    private boolean isFunction;
+    private Boolean isFunction;
     private Map<Integer, String> relatedCells = new HashMap<>();
 
     public Cell() {
@@ -225,6 +225,14 @@ public class Cell {
         if (isFunction) {
             buildFunction(getFunctionValue());
         }
+    }
+
+    public void isFunction(Boolean val) {
+        this.isFunction = val;
+    }
+
+    public boolean isFunction() {
+       return this.isFunction;
     }
 
     public void updateFunctionRelatedCell(String relatedCell, String newRelatedCell) {
