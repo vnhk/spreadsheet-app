@@ -34,6 +34,7 @@ import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -102,9 +103,17 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
             // Deserialize body to cells
             try {
+                for (Field declaredField : Cell.class.getDeclaredFields()) {
+                    declaredField.setAccessible(true);
+                }
+
                 cells = objectMapper.readValue(body, Cell[][].class);
                 rows = cells.length;
                 columns = cells[0].length;
+
+                for (Field declaredField : Cell.class.getDeclaredFields()) {
+                    declaredField.setAccessible(false);
+                }
 
                 // Rebuild cell map
                 rebuildCellMap();
