@@ -49,8 +49,8 @@ public class SpreadsheetUtils {
                 Comparator<Cell[]> comparator = (row1, row2) -> {
                     Cell cell1 = row1[sortColumnIndex];
                     Cell cell2 = row2[sortColumnIndex];
-                    String val1 = cell1 != null ? cell1.value : null;
-                    String val2 = cell2 != null ? cell2.value : null;
+                    String val1 = cell1 != null ? cell1.getValue() : null;
+                    String val2 = cell2 != null ? cell2.getValue() : null;
 
                     boolean isVal1Integer = isInteger(val1);
                     boolean isVal2Integer = isInteger(val2);
@@ -123,7 +123,7 @@ public class SpreadsheetUtils {
 
                 Comparator<SpreadsheetRow> comparator = Comparator.comparing(row -> {
                     Cell sortCell = row.getCell(getColumnIndex(sortColumn));
-                    String cellValue = sortCell != null ? sortCell.value : null;
+                    String cellValue = sortCell != null ? sortCell.getValue() : null;
 
                     // If cellValue is null or non-integer, treat it as greater than any integer value
                     if (cellValue == null || !isInteger(cellValue)) {
@@ -154,7 +154,7 @@ public class SpreadsheetUtils {
                     newValues.put(index, new ArrayList<>());
 
                     for (String column : columnsToSort) {
-                        newValues.get(index).add(sortedRow.getCell(getColumnIndex(column)).value);
+                        newValues.get(index).add(sortedRow.getCell(getColumnIndex(column)).getValue());
                     }
 
                     index++;
@@ -252,7 +252,7 @@ public class SpreadsheetUtils {
 
         for (SpreadsheetRow spreadsheetRow : rows) {
             for (Cell cell : spreadsheetRow.getCells()) {
-                if (cell.isFunction) {
+                if (cell.isFunction()) {
                     for (int i = 0; i < cell.getRelatedCellsId().size(); i++) {
                         String relatedCell = cell.getRelatedCellsId().get(i);
                         Integer rowNumber = SpreadsheetUtils.getRowNumberFromColumn(relatedCell);
@@ -269,15 +269,15 @@ public class SpreadsheetUtils {
 
     public static void shiftColumnsPlus1InFunctions(int columnIndex, List<SpreadsheetRow> rows) {
         SpreadsheetRow spreadsheetRow0 = rows.get(0); //it must exist to use this function
-        List<String> affectedColumns = spreadsheetRow0.getCells().stream().filter(e -> e.columnNumber > columnIndex)
-                .map(e -> e.columnSymbol)
+        List<String> affectedColumns = spreadsheetRow0.getCells().stream().filter(e -> e.getColumnNumber() > columnIndex)
+                .map(e -> e.getColumnSymbol())
                 .toList();
         // > or >= ?????
 
         //each affected column in any function in any cell has to be updated + 1
         for (SpreadsheetRow spreadsheetRow : rows) {
             for (Cell cell : spreadsheetRow.getCells()) {
-                if (cell.isFunction) {
+                if (cell.isFunction()) {
                     for (int i = 0; i < cell.getRelatedCellsId().size(); i++) {
                         String relatedCell = cell.getRelatedCellsId().get(i);
                         String columnHeader = SpreadsheetUtils.getColumnHeader(relatedCell);

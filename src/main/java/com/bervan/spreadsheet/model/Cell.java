@@ -1,5 +1,9 @@
 package com.bervan.spreadsheet.model;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,18 +12,21 @@ import java.util.Map;
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnHeader;
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnIndex;
 
+@Getter
+@Setter
+@Slf4j
 public class Cell {
-    public String columnSymbol;
-    public Integer columnNumber;
-    public Integer rowNumber;
-    public String cellId;
+    private String columnSymbol;
+    private Integer columnNumber;
+    private Integer rowNumber;
+    private String cellId;
     //displayValue
-    public String value = "";
+    private String value = "";
     //internalValueIfFunction to be visible on click
-    public String functionName;
-    public String htmlContent;
+    private String functionName;
+    private String htmlContent;
     private String functionValue;
-    public boolean isFunction;
+    private boolean isFunction;
     private Map<Integer, String> relatedCells = new HashMap<>();
 
     public Cell() {
@@ -81,7 +88,7 @@ public class Cell {
                 colonSeparatedCells(toParseRelated);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Function building error: ", e);
             this.value = "ERROR";
             this.functionValue = "ERROR";
         }

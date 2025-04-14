@@ -71,9 +71,9 @@ public class Spreadsheet extends BervanBaseEntity<UUID> implements PersistableTa
             rows.get(i).number = i;
             for (int i1 = 0; i1 < rows.get(i).getCells().size(); i1++) {
                 String columnHeader = getColumnHeader(i1);
-                rows.get(i).getCells().get(i1).cellId = columnHeader + i;
-                rows.get(i).getCells().get(i1).columnNumber = i1;
-                rows.get(i).getCells().get(i1).rowNumber = i;
+                rows.get(i).getCells().get(i1).setCellId(columnHeader + i);
+                rows.get(i).getCells().get(i1).setColumnNumber(i1);
+                rows.get(i).getCells().get(i1).setRowNumber(i);
             }
         }
     }

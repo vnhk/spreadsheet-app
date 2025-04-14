@@ -29,44 +29,44 @@ class SpreadsheetUtilsTest {
         Assertions.assertTrue(utilsMessage.isSuccess);
 
         // Verify sorted order
-        Assertions.assertEquals("Bonds", cells[1][0].value);
-        Assertions.assertEquals("0", cells[1][1].value);
+        Assertions.assertEquals("Bonds", cells[1][0].getValue());
+        Assertions.assertEquals("0", cells[1][1].getValue());
 
-        Assertions.assertEquals("Investing", cells[2][0].value);
-        Assertions.assertEquals("0", cells[2][1].value);
+        Assertions.assertEquals("Investing", cells[2][0].getValue());
+        Assertions.assertEquals("0", cells[2][1].getValue());
 
-        Assertions.assertEquals("Internet", cells[3][0].value);
-        Assertions.assertEquals("80", cells[3][1].value);
+        Assertions.assertEquals("Internet", cells[3][0].getValue());
+        Assertions.assertEquals("80", cells[3][1].getValue());
 
-        Assertions.assertEquals("Netflix", cells[4][0].value);
-        Assertions.assertEquals("90", cells[4][1].value);
+        Assertions.assertEquals("Netflix", cells[4][0].getValue());
+        Assertions.assertEquals("90", cells[4][1].getValue());
 
-        Assertions.assertEquals("GPT", cells[5][0].value);
-        Assertions.assertEquals("100", cells[5][1].value);
+        Assertions.assertEquals("GPT", cells[5][0].getValue());
+        Assertions.assertEquals("100", cells[5][1].getValue());
 
-        Assertions.assertEquals("Electricity", cells[6][0].value);
-        Assertions.assertEquals("180", cells[6][1].value);
+        Assertions.assertEquals("Electricity", cells[6][0].getValue());
+        Assertions.assertEquals("180", cells[6][1].getValue());
 
-        Assertions.assertEquals("English", cells[7][0].value);
-        Assertions.assertEquals("400", cells[7][1].value);
+        Assertions.assertEquals("English", cells[7][0].getValue());
+        Assertions.assertEquals("400", cells[7][1].getValue());
 
-        Assertions.assertEquals("English", cells[8][0].value);
-        Assertions.assertEquals("400", cells[8][1].value);
+        Assertions.assertEquals("English", cells[8][0].getValue());
+        Assertions.assertEquals("400", cells[8][1].getValue());
 
-        Assertions.assertEquals("Fuel", cells[9][0].value);
-        Assertions.assertEquals("500", cells[9][1].value);
+        Assertions.assertEquals("Fuel", cells[9][0].getValue());
+        Assertions.assertEquals("500", cells[9][1].getValue());
 
-        Assertions.assertEquals("Food Ordering", cells[10][0].value);
-        Assertions.assertEquals("600", cells[10][1].value);
+        Assertions.assertEquals("Food Ordering", cells[10][0].getValue());
+        Assertions.assertEquals("600", cells[10][1].getValue());
 
-        Assertions.assertEquals("G-Bills", cells[11][0].value);
-        Assertions.assertEquals("630", cells[11][1].value);
+        Assertions.assertEquals("G-Bills", cells[11][0].getValue());
+        Assertions.assertEquals("630", cells[11][1].getValue());
 
-        Assertions.assertEquals("Credit", cells[12][0].value);
-        Assertions.assertEquals("1700", cells[12][1].value);
+        Assertions.assertEquals("Credit", cells[12][0].getValue());
+        Assertions.assertEquals("1700", cells[12][1].getValue());
 
-        Assertions.assertEquals("Household Shopping", cells[13][0].value);
-        Assertions.assertEquals("2000", cells[13][1].value);
+        Assertions.assertEquals("Household Shopping", cells[13][0].getValue());
+        Assertions.assertEquals("2000", cells[13][1].getValue());
     }
 
     @Test
@@ -83,44 +83,44 @@ class SpreadsheetUtilsTest {
         Assertions.assertTrue(utilsMessage.isSuccess);
 
         // Verify sorted order
-        Assertions.assertEquals("Household Shopping", cells[1][0].value);
-        Assertions.assertEquals("2000", cells[1][1].value);
+        Assertions.assertEquals("Household Shopping", cells[1][0].getValue());
+        Assertions.assertEquals("2000", cells[1][1].getValue());
 
-        Assertions.assertEquals("Credit", cells[2][0].value);
-        Assertions.assertEquals("1700", cells[2][1].value);
+        Assertions.assertEquals("Credit", cells[2][0].getValue());
+        Assertions.assertEquals("1700", cells[2][1].getValue());
 
-        Assertions.assertEquals("G-Bills", cells[3][0].value);
-        Assertions.assertEquals("630", cells[3][1].value);
+        Assertions.assertEquals("G-Bills", cells[3][0].getValue());
+        Assertions.assertEquals("630", cells[3][1].getValue());
 
-        Assertions.assertEquals("Food Ordering", cells[4][0].value);
-        Assertions.assertEquals("600", cells[4][1].value);
+        Assertions.assertEquals("Food Ordering", cells[4][0].getValue());
+        Assertions.assertEquals("600", cells[4][1].getValue());
 
-        Assertions.assertEquals("Fuel", cells[5][0].value);
-        Assertions.assertEquals("500", cells[5][1].value);
+        Assertions.assertEquals("Fuel", cells[5][0].getValue());
+        Assertions.assertEquals("500", cells[5][1].getValue());
 
-        Assertions.assertEquals("English", cells[6][0].value);
-        Assertions.assertEquals("400", cells[6][1].value);
+        Assertions.assertEquals("English", cells[6][0].getValue());
+        Assertions.assertEquals("400", cells[6][1].getValue());
 
-        Assertions.assertEquals("English", cells[7][0].value);
-        Assertions.assertEquals("400", cells[7][1].value);
+        Assertions.assertEquals("English", cells[7][0].getValue());
+        Assertions.assertEquals("400", cells[7][1].getValue());
 
-        Assertions.assertEquals("Electricity", cells[8][0].value);
-        Assertions.assertEquals("180", cells[8][1].value);
+        Assertions.assertEquals("Electricity", cells[8][0].getValue());
+        Assertions.assertEquals("180", cells[8][1].getValue());
 
-        Assertions.assertEquals("GPT", cells[9][0].value);
-        Assertions.assertEquals("100", cells[9][1].value);
+        Assertions.assertEquals("GPT", cells[9][0].getValue());
+        Assertions.assertEquals("100", cells[9][1].getValue());
 
-        Assertions.assertEquals("Netflix", cells[10][0].value);
-        Assertions.assertEquals("90", cells[10][1].value);
+        Assertions.assertEquals("Netflix", cells[10][0].getValue());
+        Assertions.assertEquals("90", cells[10][1].getValue());
 
-        Assertions.assertEquals("Internet", cells[11][0].value);
-        Assertions.assertEquals("80", cells[11][1].value);
+        Assertions.assertEquals("Internet", cells[11][0].getValue());
+        Assertions.assertEquals("80", cells[11][1].getValue());
 
-        Assertions.assertEquals("Bonds", cells[12][0].value);
-        Assertions.assertEquals("0", cells[12][1].value);
+        Assertions.assertEquals("Bonds", cells[12][0].getValue());
+        Assertions.assertEquals("0", cells[12][1].getValue());
 
-        Assertions.assertEquals("Investing", cells[13][0].value);
-        Assertions.assertEquals("0", cells[13][1].value);
+        Assertions.assertEquals("Investing", cells[13][0].getValue());
+        Assertions.assertEquals("0", cells[13][1].getValue());
     }
 
     private Cell[][] initializeTestCells() {

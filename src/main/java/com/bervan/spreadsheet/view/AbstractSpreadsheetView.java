@@ -177,7 +177,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void clearSelection() {
         for (Cell cell : selectedCells) {
-            getElement().executeJs("document.getElementById($0).style.backgroundColor = ''", cell.cellId);
+            getElement().executeJs("document.getElementById($0).style.backgroundColor = ''", cell.getCellId());
         }
         selectedCells.clear();
         refreshClearSelectionButtonVisibility();
@@ -240,7 +240,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             Map<String, List<Cell>> columnsMap = new HashMap<>();
 
             for (Cell cell : selectedCells) {
-                String column = cell.columnSymbol;
+                String column = cell.getColumnSymbol();
                 columnsMap.putIfAbsent(column, new ArrayList<>());
                 columnsMap.get(column).add(cell);
             }
@@ -248,10 +248,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             boolean allSameSize = columnsMap.values().stream().map(List::size).distinct().count() == 1;
 
             if (allSameSize) {
-                List<Integer> referenceRowNumbers = columnsMap.values().iterator().next().stream().map(cell -> cell.rowNumber).sorted().toList();
+                List<Integer> referenceRowNumbers = columnsMap.values().iterator().next().stream().map(cell -> cell.getRowNumber()).sorted().toList();
 
                 boolean allRowsMatch = columnsMap.values().stream().allMatch(cells -> {
-                    List<Integer> rowNumbers = cells.stream().map(cell -> cell.rowNumber).sorted().toList();
+                    List<Integer> rowNumbers = cells.stream().map(cell -> cell.getRowNumber()).sorted().toList();
                     return rowNumbers.equals(referenceRowNumbers);
                 });
 
@@ -263,10 +263,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                         String column = entry.getKey();
                         List<Cell> cells = entry.getValue();
 
-                        minRow = cells.stream().mapToInt(c -> c.rowNumber).min().orElseThrow();
-                        maxRow = cells.stream().mapToInt(c -> c.rowNumber).max().orElseThrow();
+                        minRow = cells.stream().mapToInt(c -> c.getRowNumber()).min().orElseThrow();
+                        maxRow = cells.stream().mapToInt(c -> c.getRowNumber()).max().orElseThrow();
 
-                        Set<Integer> rowNumbers = cells.stream().map(cell -> cell.rowNumber).collect(Collectors.toSet());
+                        Set<Integer> rowNumbers = cells.stream().map(cell -> cell.getRowNumber()).collect(Collectors.toSet());
 
                         for (int i = minRow; i <= maxRow; i++) {
                             if (!rowNumbers.contains(i)) {
@@ -408,11 +408,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                     }
                     Cell historyCell = historyCells[row][col];
 
-                    String currentValue = currentCell != null && currentCell.value != null ? currentCell.value : "";
-                    String historyValue = historyCell.value != null ? historyCell.value : "";
+                    String currentValue = currentCell != null && currentCell.getValue() != null ? currentCell.getValue() : "";
+                    String historyValue = historyCell.getValue() != null ? historyCell.getValue() : "";
 
                     if (!currentValue.equals(historyValue)) {
-                        changedCellIds.add(historyCell.cellId);
+                        changedCellIds.add(historyCell.getCellId());
                     }
                 }
             }
@@ -556,9 +556,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         focusedCell = cellMap.get(cellId); // Find the focused cell by ID
 
         if (focusedCell != null) {
-            if (focusedCell.isFunction) {
+            if (focusedCell.isFunction()) {
                 String formula = focusedCell.getFunctionValue();
-                updateCellInClient(focusedCell.cellId, formula);
+                updateCellInClient(focusedCell.getCellId(), formula);
             }
         }
     }
@@ -569,9 +569,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < columns; j++) {
                 Cell cell = new Cell("", j, i);
-                cell.htmlContent = "";
+                cell.setHtmlContent("");
                 cells[i][j] = cell;
-                cellMap.put(cell.cellId, cell);
+                cellMap.put(cell.getCellId(), cell);
             }
         }
     }
@@ -591,17 +591,17 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             for (int j = 0; j < columns; j++) {
                 if (newCells[i][j] == null) {
                     Cell cell = new Cell("", j, i);
-                    cell.htmlContent = "";
+                    cell.setHtmlContent("");
                     newCells[i][j] = cell;
-                    cellMap.put(cell.cellId, cell);
+                    cellMap.put(cell.getCellId(), cell);
                 } else {
                     // Update cell metadata
                     Cell cell = newCells[i][j];
-                    cell.columnNumber = j;
-                    cell.rowNumber = i;
-                    cell.columnSymbol = getColumnName(j);
-                    cell.cellId = cell.columnSymbol + cell.rowNumber; // Start row numbering from 0
-                    cellMap.put(cell.cellId, cell);
+                    cell.setColumnNumber(j);
+                    cell.setRowNumber(i);
+                    cell.setColumnSymbol(getColumnName(j));
+                    cell.setCellId(cell.getColumnSymbol() + cell.getRowNumber());
+                    cellMap.put(cell.getCellId(), cell);
                 }
             }
         }
@@ -615,14 +615,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             for (int j = 0; j < cells[0].length; j++) {
                 Cell cell = cells[i][j];
                 // Update cell IDs to start row numbering from 0
-                cell.columnNumber = j;
-                cell.rowNumber = i;
-                cell.columnSymbol = getColumnName(j);
-                cell.cellId = cell.columnSymbol + cell.rowNumber;
-                if (cell.htmlContent == null) {
-                    cell.htmlContent = cell.value != null ? cell.value : "";
+                cell.setColumnNumber(j);
+                cell.setRowNumber(i);
+                cell.setColumnSymbol(getColumnName(j));
+                cell.setCellId(cell.getColumnSymbol() + cell.getRowNumber());
+                if (cell.getHtmlContent() == null) {
+                    cell.setHtmlContent(cell.getValue() != null ? cell.getValue() : "");
                 }
-                cellMap.put(cell.cellId, cell);
+                cellMap.put(cell.getCellId(), cell);
             }
         }
     }
@@ -656,13 +656,13 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
             for (int col = 0; col < columns; col++) {
                 Cell cell = cells[row][col];
-                String cellId = cell.cellId;
+                String cellId = cell.getCellId();
 
                 tableBuilder.append("<td ")
                         .append("id='").append(cellId).append("' ")
                         .append("contenteditable='").append(isEditable).append("' ");
 
-                if (cell.isFunction) {
+                if (cell.isFunction()) {
                     if (selectedCells.contains(cell)) {
                         tableBuilder.append("class='spreadsheet-cell selected-cell spreadsheet-cell-function'");
                     } else {
@@ -684,11 +684,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
                 tableBuilder.append(">");
 
-                if (cell.isFunction) {
+                if (cell.isFunction()) {
                     cell.buildFunction(cell.getFunctionValue());
                 }
 
-                String val = cell.htmlContent != null ? cell.htmlContent : "";
+                String val = cell.getHtmlContent() != null ? cell.getHtmlContent() : "";
                 tableBuilder.append(val);
                 tableBuilder.append("</td>");
             }
@@ -709,20 +709,20 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Cell cell = cellMap.get(cellId);
         if (cell != null) {
             // Update the cell's htmlContent
-            cell.htmlContent = htmlContent;
+            cell.setHtmlContent(htmlContent);
 
             // Extract plain text value from htmlContent
             String value = Jsoup.parse(htmlContent).text();
-            cell.value = value;
+            cell.setValue(value);
 
             // If value starts with '=', it's a function
             if (value.startsWith("=")) {
-                cell.isFunction = true;
+                cell.setFunction(true);
                 cell.buildFunction(value);
             } else {
-                cell.isFunction = false;
-                cell.functionName = null;
-                cell.value = value;
+                cell.setFunction(false);
+                cell.setFunctionName(null);
+                cell.setValue(value);
             }
 
             // Recalculate dependent cells
@@ -734,7 +734,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             }
 
             // Update the cell in the client-side
-            updateCellInClient(cell.cellId, cell.htmlContent);
+            updateCellInClient(cell.getCellId(), cell.getHtmlContent());
         }
     }
 
@@ -753,25 +753,25 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void recalculateCell(Cell cell, Set<String> visitedCells, int depth) {
         if (depth > MAX_RECURSION_DEPTH) {
-            System.out.println("Recursion limit exceeded for cell: " + cell.cellId);
+            System.out.println("Recursion limit exceeded for cell: " + cell.getCellId());
             return;
         }
 
-        if (visitedCells.contains(cell.cellId)) {
+        if (visitedCells.contains(cell.getCellId())) {
             return;
         }
 
-        visitedCells.add(cell.cellId);
+        visitedCells.add(cell.getCellId());
 
-        if (cell.isFunction) {
+        if (cell.isFunction()) {
             calculateFunctionValue(cell);
         }
 
         // Update the cell in the client-side
-        updateCellInClient(cell.cellId, cell.htmlContent);
+        updateCellInClient(cell.getCellId(), cell.getHtmlContent());
 
         // Now, find and update any cells that depend on this cell
-        for (Cell dependentCell : getDependentCells(cell.cellId)) {
+        for (Cell dependentCell : getDependentCells(cell.getCellId())) {
             recalculateCell(dependentCell, visitedCells, depth + 1);
         }
     }
@@ -806,17 +806,17 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private void calculateFunctionValue(Cell cell) {
-        String functionName = cell.functionName;
+        String functionName = cell.getFunctionName();
         Optional<? extends SpreadsheetFunction> first = spreadsheetFunctions.stream()
                 .filter(e -> e.getName().equals(functionName))
                 .findFirst();
 
         if (first.isPresent()) {
-            cell.value = String.valueOf(first.get().calculate(cell.getRelatedCellsId(), getRows()));
-            cell.htmlContent = cell.value; // Update htmlContent
+            cell.setValue(String.valueOf(first.get().calculate(cell.getRelatedCellsId(), getRows())));
+            cell.setHtmlContent(cell.getValue());
         } else {
-            cell.value = "NO FUNCTION";
-            cell.htmlContent = cell.value;
+            cell.setValue("NO FUNCTION");
+            cell.setHtmlContent(cell.getValue());
         }
     }
 
@@ -837,7 +837,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[0].length; j++) {
                 Cell cell = cells[i][j];
-                if (cell.isFunction && cell.getRelatedCellsId().contains(cellId)) {
+                if (cell.isFunction() && cell.getRelatedCellsId().contains(cellId)) {
                     dependents.add(cell);
                 }
             }
@@ -850,14 +850,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[0].length; j++) {
                 Cell cell = cells[i][j];
-                if (cell.isFunction) {
+                if (cell.isFunction()) {
                     try {
                         recalculateCell(cell);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        cell.value = "ERROR";
-                        cell.htmlContent = cell.value;
-                        updateCellInClient(cell.cellId, cell.htmlContent);
+                        cell.setValue("ERROR");
+                        cell.setHtmlContent(cell.getValue());
+                        updateCellInClient(cell.getCellId(), cell.getHtmlContent());
                     }
                 }
             }
@@ -889,7 +889,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             Map<String, List<Cell>> columnsMap = new HashMap<>();
 
             for (Cell cell : selectedCells) {
-                String column = cell.columnSymbol;
+                String column = cell.getColumnSymbol();
                 columnsMap.putIfAbsent(column, new ArrayList<>());
                 columnsMap.get(column).add(cell);
             }
@@ -897,10 +897,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             boolean allSameSize = columnsMap.values().stream().map(List::size).distinct().count() == 1;
 
             if (allSameSize) {
-                List<Integer> referenceRowNumbers = columnsMap.values().iterator().next().stream().map(cell -> cell.rowNumber).sorted().toList();
+                List<Integer> referenceRowNumbers = columnsMap.values().iterator().next().stream().map(cell -> cell.getRowNumber()).sorted().toList();
 
                 boolean allRowsMatch = columnsMap.values().stream().allMatch(cells -> {
-                    List<Integer> rowNumbers = cells.stream().map(cell -> cell.rowNumber).sorted().toList();
+                    List<Integer> rowNumbers = cells.stream().map(cell -> cell.getRowNumber()).sorted().toList();
                     return rowNumbers.equals(referenceRowNumbers);
                 });
 
@@ -912,10 +912,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                         String column = entry.getKey();
                         List<Cell> cells = entry.getValue();
 
-                        minRow = cells.stream().mapToInt(c -> c.rowNumber).min().orElseThrow();
-                        maxRow = cells.stream().mapToInt(c -> c.rowNumber).max().orElseThrow();
+                        minRow = cells.stream().mapToInt(c -> c.getRowNumber()).min().orElseThrow();
+                        maxRow = cells.stream().mapToInt(c -> c.getRowNumber()).max().orElseThrow();
 
-                        Set<Integer> rowNumbers = cells.stream().map(cell -> cell.rowNumber)
+                        Set<Integer> rowNumbers = cells.stream().map(cell -> cell.getRowNumber())
                                 .collect(Collectors.toSet());
 
                         for (int i = minRow; i <= maxRow; i++) {
@@ -979,7 +979,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             sb.append(row).append("\t");
             for (int col = 0; col < columns; col++) {
                 Cell cell = cells[row][col];
-                String val = (cell != null && cell.htmlContent != null) ? Jsoup.parse(cell.htmlContent).text().replaceAll("\n", " ")
+                String val = (cell != null && cell.getHtmlContent() != null) ? Jsoup.parse(cell.getHtmlContent()).text().replaceAll("\n", " ")
                         .replaceAll("\t", " ") : "";
                 sb.append(val).append("\t");
             }
@@ -996,10 +996,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         StringBuilder sb = new StringBuilder();
 
-        int minRow = cellList.stream().mapToInt(e -> e.rowNumber).min().orElse(0);
-        int maxRow = cellList.stream().mapToInt(e -> e.rowNumber).max().orElse(0);
-        int minCol = cellList.stream().mapToInt(e -> e.columnNumber).min().orElse(0);
-        int maxCol = cellList.stream().mapToInt(e -> e.columnNumber).max().orElse(0);
+        int minRow = cellList.stream().mapToInt(e -> e.getRowNumber()).min().orElse(0);
+        int maxRow = cellList.stream().mapToInt(e -> e.getRowNumber()).max().orElse(0);
+        int minCol = cellList.stream().mapToInt(e -> e.getColumnNumber()).min().orElse(0);
+        int maxCol = cellList.stream().mapToInt(e -> e.getColumnNumber()).max().orElse(0);
 
         sb.append("#\t");
         for (int col = minCol; col <= maxCol; col++) {
@@ -1009,7 +1009,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         Map<String, Cell> cellMap = cellList.stream()
                 .collect(Collectors.toMap(
-                        cell -> cell.columnNumber + "_" + cell.rowNumber,
+                        cell -> cell.getColumnNumber() + "_" + cell.getRowNumber(),
                         cell -> cell
                 ));
 
@@ -1017,7 +1017,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             sb.append(row).append("\t");
             for (int col = minCol; col <= maxCol; col++) {
                 Cell cell = cellMap.get(col + "_" + row);
-                String val = (cell != null && cell.htmlContent != null) ? Jsoup.parse(cell.htmlContent).text().replaceAll("\n", " ")
+                String val = (cell != null && cell.getHtmlContent() != null) ? Jsoup.parse(cell.getHtmlContent()).text().replaceAll("\n", " ")
                         .replaceAll("\t", " ") : "";
                 sb.append(val).append("\t");
             }
@@ -1051,10 +1051,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         if (selectedCells.size() != 0) {
             for (Cell selectedCell : selectedCells) {
-                String content = selectedCell.htmlContent != null ? selectedCell.htmlContent : "";
+                String content = selectedCell.getHtmlContent() != null ? selectedCell.getHtmlContent() : "";
                 // Avoid duplicating tags if they already exist
                 if (!content.contains(openTag)) {
-                    selectedCell.htmlContent = openTag + content + closeTag;
+                    selectedCell.setHtmlContent(openTag + content + closeTag);
                 }
             }
 
@@ -1064,10 +1064,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 return;
             }
 
-            String content = focusedCell.htmlContent != null ? focusedCell.htmlContent : "";
+            String content = focusedCell.getHtmlContent() != null ? focusedCell.getHtmlContent() : "";
             // Avoid duplicating tags if they already exist
             if (!content.contains(openTag)) {
-                focusedCell.htmlContent = openTag + content + closeTag;
+                focusedCell.setHtmlContent(openTag + content + closeTag);
             }
         }
 
@@ -1110,8 +1110,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 showErrorNotification("URL cannot be empty.");
                 return;
             }
-            String content = focusedCell.htmlContent != null ? focusedCell.htmlContent : focusedCell.value;
-            focusedCell.htmlContent = "<a href=\"" + url + "\">" + content + "</a>";
+            String content = focusedCell.getHtmlContent() != null ? focusedCell.getHtmlContent() : focusedCell.getValue();
+            focusedCell.setHtmlContent("<a href=\"" + url + "\">" + content + "</a>");
             refreshTable();
             showSuccessNotification("Link applied to focused cell.");
             dialog.close();
@@ -1140,8 +1140,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 showErrorNotification("Image URL cannot be empty.");
                 return;
             }
-            focusedCell.htmlContent = "<img src=\"" + url + "\" alt=\"Image\" />";
-            focusedCell.value = ""; // Maybe set value to empty
+            focusedCell.setHtmlContent("<img src=\"" + url + "\" alt=\"Image\" />");
+            focusedCell.setValue("");
             refreshTable();
             showSuccessNotification("Image inserted into focused cell.");
             dialog.close();
@@ -1208,7 +1208,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         }
 
         // Determine starting position
-        int startColumn = focusedCell.columnNumber;
+        int startColumn = focusedCell.getColumnNumber();
         int startRow = 0; // You can adjust this if you want to start from a specific row
 
         // Check if the table needs to be expanded
@@ -1231,7 +1231,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 int currentColumn = startColumn + j;
                 if (currentRow < cells.length && currentColumn < cells[0].length) {
                     Cell cell = cells[currentRow][currentColumn];
-                    if (cell != null && (cell.value != null && !cell.value.isEmpty())) {
+                    if (cell != null && (cell.getValue() != null && !cell.getValue().isEmpty())) {
                         willOverwrite = true;
                         break;
                     }
@@ -1274,10 +1274,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 if (currentRow < cells.length && currentColumn < cells[0].length) {
                     Cell cell = cells[currentRow][currentColumn];
                     if (cell != null) {
-                        cell.value = cellValue;
-                        cell.htmlContent = cellValue;
+                        cell.setValue(cellValue);
+                        cell.setHtmlContent(cellValue);
                         // Update the cell in the client-side
-                        updateCellInClient(cell.cellId, cell.htmlContent);
+                        updateCellInClient(cell.getCellId(), cell.getHtmlContent());
                     }
                 }
             }

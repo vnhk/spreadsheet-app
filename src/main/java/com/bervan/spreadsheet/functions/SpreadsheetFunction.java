@@ -36,7 +36,7 @@ public interface SpreadsheetFunction {
 
         List<Cell> collect = rows.stream()
                 .flatMap(List::stream)
-                .filter(e -> cells.contains(e.cellId))
+                .filter(e -> cells.contains(e.getCellId()))
                 .toList();
 
         result.addAll(collect);
@@ -60,7 +60,7 @@ public interface SpreadsheetFunction {
 
         return rows.stream()
                 .flatMap(List::stream)
-                .filter(e -> param.contains(e.cellId))
+                .filter(e -> param.contains(e.getCellId()))
                 .findFirst().orElseThrow();
     }
 
@@ -73,7 +73,7 @@ public interface SpreadsheetFunction {
             Object param = params.get(i);
             double val;
             if (param instanceof Cell) {
-                val = Double.parseDouble(((Cell) param).value);
+                val = Double.parseDouble(((Cell) param).getValue());
             } else {
                 val = Double.parseDouble(String.valueOf(param));
             }
@@ -88,7 +88,7 @@ public interface SpreadsheetFunction {
             Object param = params.get(i);
             String val;
             if (param instanceof Cell) {
-                val = ((Cell) param).value;
+                val = ((Cell) param).getValue();
             } else {
                 val = String.valueOf(param);
             }
