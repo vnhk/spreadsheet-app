@@ -26,7 +26,8 @@ public class Cell {
     private String functionName;
     private String htmlContent;
     private String functionValue;
-    private Boolean isFunction;
+    private Boolean isFunction = false;
+    private Boolean function = false;
     private Map<Integer, String> relatedCells = new HashMap<>();
 
     public Cell() {
@@ -228,7 +229,7 @@ public class Cell {
     }
 
     public void isFunction(Boolean val) {
-        this.isFunction = val;
+        this.isFunction = val == null ? false : val;
     }
 
     public boolean isFunction() {
