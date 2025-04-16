@@ -4,10 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnHeader;
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.getColumnIndex;
@@ -29,6 +26,7 @@ public class Cell {
     private Boolean isFunction = false;
     private Boolean function = false;
     private Map<Integer, String> relatedCells = new HashMap<>();
+    private Map<String, Cell> innerFunctionCells = new HashMap<>();
 
     public Cell() {
 
@@ -66,7 +64,14 @@ public class Cell {
         for (int i = 0; i < relatedCells.size(); i++) {
             String param = "<#" + i + ">";
             if (returnFunctionValue.contains(param)) {
-                returnFunctionValue = returnFunctionValue.replace(param, relatedCells.get(i));
+                String replacement = relatedCells.get(i);
+                if (replacement.contains("SUB_F#")) {
+                    Cell cell = innerFunctionCells.get(replacement);
+                    String innerFValue = cell.getFunctionValue();
+                    returnFunctionValue = returnFunctionValue.replace(param, innerFValue);
+                } else {
+                    returnFunctionValue = returnFunctionValue.replace(param, replacement);
+                }
             }
         }
 
@@ -79,20 +84,90 @@ public class Cell {
             isFunction = true;
             functionValue = value;
             functionName = value.split("=")[1].split("\\(")[0];
-            String toParseRelated = value.split("=")[1].split("\\(")[1];
+            if (countOccurrences(value, '=') == 1) {
+                String toParseRelated = value.split("=")[1].split("\\(")[1];
 
-            if (toParseRelated.contains(",")) {
-                //comma separated cells
-                commaSeparatedCells(toParseRelated);
-            } else if (toParseRelated.contains(":")) {
-                //range cells
-                colonSeparatedCells(toParseRelated);
+                if (toParseRelated.contains(",")) {
+                    //comma separated cells
+                    commaSeparatedCells(toParseRelated);
+                } else if (toParseRelated.contains(":")) {
+                    //range cells
+                    colonSeparatedCells(toParseRelated);
+                }
+            } else {
+                multiFunction(functionValue);
             }
+
         } catch (Exception e) {
             log.error("Function building error: ", e);
             this.value = "ERROR";
             this.functionValue = "ERROR";
         }
+    }
+
+    private void multiFunction(String functionValue) {
+        List<String> output = new ArrayList<>();
+        Stack<Integer> stack = new Stack<>();
+        StringBuilder sb = new StringBuilder(functionValue);
+
+        // Iterate over the string to find sub-functions
+        for (int i = 0; i < sb.length(); i++) {
+            if (sb.charAt(i) == '=' && (i + 1) < sb.length() && sb.charAt(i + 1) == '+') {
+                stack.push(i); // Push position of '=' when we detect a function
+            }
+            if (sb.charAt(i) == ')') {
+                if (!stack.isEmpty()) {
+                    int start = stack.pop(); // Start of last function
+                    String subFunction = sb.substring(start, i + 1);
+                    String uuid = "SUB_F#" + UUID.randomUUID().toString();
+
+                    // Add the sub-function to the output list
+                    output.add(subFunction);
+
+                    innerFunctionCells.put(uuid, new Cell(subFunction, columnNumber, rowNumber));
+
+                    // Replace sub-function occurrence with UUID in original
+                    sb.replace(start, i + 1, uuid);
+
+                    // Adjust index after replacement
+                    i = start + uuid.length() - 1;
+                }
+            }
+        }
+
+        // Add the final restructured function with UUIDs
+//        output.add(sb.toString());
+        String lastSub = output.get(output.size() - 1);
+        this.value = this.functionValue;
+        this.functionValue = lastSub;
+
+        String toParseRelated = this.functionValue.split("=")[1].split("\\(")[1];
+        if (toParseRelated.contains(",")) {
+            commaSeparatedCells(toParseRelated);
+        } else if (toParseRelated.contains(":")) {
+            colonSeparatedCells(toParseRelated);
+        }
+//        for (Map.Entry<String, Cell> stringCellEntry : innerFunctionCells.entrySet()) {
+//
+//            Cell cell = stringCellEntry.getValue();
+//            if (cell.functionValue.contains(",")) {
+//                //comma separated cells
+//                cell.commaSeparatedCells(cell.functionValue);
+//            } else if (cell.functionValue.contains(":")) {
+//                //range cells
+//                cell.colonSeparatedCells(cell.functionValue);
+//            }
+//        }
+    }
+
+    private int countOccurrences(String input, char target) {
+        int count = 0;
+        for (int i = 0; i < input.length(); i++) {
+            if (input.charAt(i) == target) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private void commaSeparatedCells(String toParseRelated) {

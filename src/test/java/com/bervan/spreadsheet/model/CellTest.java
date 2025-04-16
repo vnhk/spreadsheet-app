@@ -12,6 +12,20 @@ class CellTest {
         Assertions.assertEquals(functionValue, cell.getFunctionValue());
     }
 
+    @Test
+    void testCreation_multiFunction() {
+        String functionValue = "=+(1,=+(1,2))";
+        Cell cell = new Cell(functionValue, 1, 1);
+        Assertions.assertEquals(functionValue, cell.getFunctionValue());
+    }
+
+    @Test
+    void testCreation_simple() {
+        String functionValue = "=+(1,5)";
+        Cell cell = new Cell(functionValue, 1, 1);
+        Assertions.assertEquals(functionValue, cell.getFunctionValue());
+    }
+
 
     @Test
     void testCreation_function_colon_separated_2() {
