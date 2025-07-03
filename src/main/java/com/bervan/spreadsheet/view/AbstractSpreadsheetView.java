@@ -14,6 +14,7 @@ import com.bervan.spreadsheet.service.HistorySpreadsheetRepository;
 import com.bervan.spreadsheet.service.SpreadsheetRepository;
 import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
+import com.bervan.spreadsheet.view.utils.StylingOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.button.Button;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.sortColumns;
@@ -46,34 +48,22 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private static final int MAX_RECURSION_DEPTH = 100;
     private final SpreadsheetService spreadsheetService;
     private final BervanLogger logger;
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Div historyHtml = new Div();
+    private final Set<Cell> selectedCells = new HashSet<>();
     @Autowired
     private SpreadsheetRepository spreadsheetRepository;
-
     @Autowired
     private HistorySpreadsheetRepository historySpreadsheetRepository;
-
     private List<SpreadsheetFunction> spreadsheetFunctions;
-
     private Spreadsheet spreadsheetEntity;
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     private Div tableHtml;
-    private final Div historyHtml = new Div();
     private int rows;
     private int columns;
     private Cell[][] cells;
     private boolean historyShow = false;
     private List<HistorySpreadsheet> sorted = new ArrayList<>();
-    private final Set<Cell> selectedCells = new HashSet<>();
     private Button clearSelectionButton;
-
-    private MenuItem stylingMenu;
-    private MenuItem boldMenuItem;
-    private MenuItem italicMenuItem;
-    private MenuItem underlineMenuItem;
-    private MenuItem linkMenuItem;
-    private MenuItem imageMenuItem;
 
     private Cell focusedCell; // Keep track of the currently focused cell
 
@@ -153,9 +143,13 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         editMenuOptions(editMenu);
 
         // Styling menu
-        stylingMenu = menuBar.addItem("Styling Column");
+        MenuItem stylingMenu = menuBar.addItem("Styling Column");
         stylingMenu.addClassName("option-button");
-        stylingMenuOptions(stylingMenu);
+        StylingOptions stylingOptions = new StylingOptions();
+        stylingOptions.stylingMenuOptions(stylingMenu, selectedCells, focusedCell, unused -> {
+            refreshTable();
+            return null;
+        });
 
         // Help menu
         MenuItem helpMenu = menuBar.addItem("Help");
@@ -334,29 +328,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
     }
 
-    private void stylingMenuOptions(MenuItem stylingMenu) {
-        SubMenu stylingSubMenu = stylingMenu.getSubMenu();
-
-        boldMenuItem = stylingSubMenu.addItem("Bold", event -> {
-            applyStyle("bold");
-        });
-
-        italicMenuItem = stylingSubMenu.addItem("Italic", event -> {
-            applyStyle("italic");
-        });
-
-        underlineMenuItem = stylingSubMenu.addItem("Underline", event -> {
-            applyStyle("underline");
-        });
-
-        linkMenuItem = stylingSubMenu.addItem("Add Link", event -> {
-            applyLink();
-        });
-
-        imageMenuItem = stylingSubMenu.addItem("Insert Image", event -> {
-            insertImage();
-        });
-    }
 
     private void fileMenuOptions(MenuItem fileMenu) {
         SubMenu fileSubMenu = fileMenu.getSubMenu();
@@ -1034,132 +1005,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         }
 
         return sb.toString();
-    }
-
-    private void applyStyle(String style) {
-        String openTag = "";
-        String closeTag = "";
-        switch (style) {
-            case "bold" -> {
-                openTag = "<b>";
-                closeTag = "</b>";
-            }
-            case "italic" -> {
-                openTag = "<i>";
-                closeTag = "</i>";
-            }
-            case "underline" -> {
-                openTag = "<u>";
-                closeTag = "</u>";
-            }
-            default -> {
-                showErrorNotification("Unknown style: " + style);
-                return;
-            }
-        }
-
-        if (selectedCells.size() != 0) {
-            for (Cell selectedCell : selectedCells) {
-                String content = selectedCell.getHtmlContent() != null ? selectedCell.getHtmlContent() : "";
-                // Avoid duplicating tags if they already exist
-                if (!content.contains(openTag)) {
-                    selectedCell.setHtmlContent(openTag + content + closeTag);
-                }
-            }
-
-        } else {
-            if (focusedCell == null) {
-                showErrorNotification("No cell is focused or selected!");
-                return;
-            }
-
-            String content = focusedCell.getHtmlContent() != null ? focusedCell.getHtmlContent() : "";
-            // Avoid duplicating tags if they already exist
-            if (!content.contains(openTag)) {
-                focusedCell.setHtmlContent(openTag + content + closeTag);
-            }
-        }
-
-        refreshTable();
-        showSuccessNotification("Style applied to focused (selected) cell(s).");
-    }
-
-    public Cell getSelectedOrFocusedCell() {
-        if (focusedCell == null && selectedCells.size() == 0) {
-            showErrorNotification("No cell is focused (selected).");
-            return null;
-        }
-
-        if (selectedCells.size() > 1) {
-            showErrorNotification("More than one cell selected!");
-            return null;
-        }
-
-        if (selectedCells.size() == 1) {
-            return selectedCells.iterator().next();
-        } else {
-            return focusedCell;
-        }
-    }
-
-    private void applyLink() {
-        Cell focusedCell = getSelectedOrFocusedCell();
-        if (focusedCell == null) {
-            return;
-        }
-
-        // Show a dialog to get the URL
-        Dialog dialog = new Dialog();
-        dialog.setWidth("400px");
-
-        BervanTextField urlField = new BervanTextField("URL", "https://example.com");
-        Button okButton = new Button("OK", e -> {
-            String url = urlField.getValue();
-            if (url == null || url.isEmpty()) {
-                showErrorNotification("URL cannot be empty.");
-                return;
-            }
-            String content = focusedCell.getHtmlContent() != null ? focusedCell.getHtmlContent() : focusedCell.getValue();
-            focusedCell.setHtmlContent("<a href=\"" + url + "\">" + content + "</a>");
-            refreshTable();
-            showSuccessNotification("Link applied to focused cell.");
-            dialog.close();
-        });
-        Button cancelButton = new Button("Cancel", e -> dialog.close());
-        HorizontalLayout buttons = new HorizontalLayout(okButton, cancelButton);
-        VerticalLayout layout = new VerticalLayout(urlField, buttons);
-        dialog.add(layout);
-        dialog.open();
-    }
-
-    private void insertImage() {
-        Cell focusedCell = getSelectedOrFocusedCell();
-        if (focusedCell == null) {
-            return;
-        }
-
-        // Show a dialog to get the image URL
-        Dialog dialog = new Dialog();
-        dialog.setWidth("400px");
-
-        BervanTextField urlField = new BervanTextField("Image URL", "https://example.com/image.png");
-        Button okButton = new Button("OK", e -> {
-            String url = urlField.getValue();
-            if (url == null || url.isEmpty()) {
-                showErrorNotification("Image URL cannot be empty.");
-                return;
-            }
-            focusedCell.setHtmlContent("<img src=\"" + url + "\" alt=\"Image\" />");
-            focusedCell.setValue("");
-            refreshTable();
-            showSuccessNotification("Image inserted into focused cell.");
-            dialog.close();
-        });
-        Button cancelButton = new Button("Cancel", e -> dialog.close());
-        HorizontalLayout buttons = new HorizontalLayout(okButton, cancelButton);
-        VerticalLayout layout = new VerticalLayout(urlField, buttons);
-        dialog.add(layout);
-        dialog.open();
     }
 
     // New method to handle the Paste action
