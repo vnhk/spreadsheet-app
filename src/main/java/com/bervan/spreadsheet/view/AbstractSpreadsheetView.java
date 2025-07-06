@@ -13,6 +13,7 @@ import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.service.HistorySpreadsheetRepository;
 import com.bervan.spreadsheet.service.SpreadsheetRepository;
 import com.bervan.spreadsheet.service.SpreadsheetService;
+import com.bervan.spreadsheet.utils.CopyTable;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import com.bervan.spreadsheet.view.utils.StylingOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +39,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.sortColumns;
@@ -55,7 +55,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private SpreadsheetRepository spreadsheetRepository;
     @Autowired
     private HistorySpreadsheetRepository historySpreadsheetRepository;
-    private List<SpreadsheetFunction> spreadsheetFunctions;
+    private final List<SpreadsheetFunction> spreadsheetFunctions;
     private Spreadsheet spreadsheetEntity;
     private Div tableHtml;
     private int rows;
@@ -68,7 +68,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private Cell focusedCell; // Keep track of the currently focused cell
 
     // Map for quick access to cells by their ID
-    private Map<String, Cell> cellMap = new HashMap<>();
+    private final Map<String, Cell> cellMap = new HashMap<>();
 
     public AbstractSpreadsheetView(SpreadsheetService service, BervanLogger logger, List<? extends SpreadsheetFunction> spreadsheetFunctions) {
         this.spreadsheetService = service;
@@ -211,10 +211,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         columnsField.addValueChangeListener(event -> {
             String columnsText = event.getValue();
             if (columnsText != null && !columnsText.trim().isEmpty()) {
-                List<String> columnOptions = Arrays.stream(columnsText.split(","))
-                        .map(String::trim)
-                        .filter(col -> !col.isEmpty())
-                        .collect(Collectors.toList());
+                List<String> columnOptions = Arrays.stream(columnsText.split(",")).map(String::trim).filter(col -> !col.isEmpty()).collect(Collectors.toList());
 
                 columnDropdown.setItems(columnOptions);
             } else {
@@ -223,8 +220,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
 
         Button okButton = new Button("Sort columns", e -> {
-            UtilsMessage utilsMessage = sortColumns(cells, columnDropdown.getValue(),
-                    orderDropdown.getValue(), columnsField.getValue(), rowsField.getValue());
+            UtilsMessage utilsMessage = sortColumns(cells, columnDropdown.getValue(), orderDropdown.getValue(), columnsField.getValue(), rowsField.getValue());
             if (utilsMessage.isSuccess) {
                 refreshTable();
                 showSuccessNotification(utilsMessage.message);
@@ -341,7 +337,13 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
 
         MenuItem copyTableItem = fileSubMenu.addItem("Copy Table", event -> {
-            showCopyTableDialog();
+            CopyTable.showCopyTableDialog(selectedCells, rows, columns, cells, string -> {
+                showErrorNotification(string);
+                return null;
+            }, string -> {
+                showSuccessNotification(string);
+                return null;
+            });
         });
 
         MenuItem showHistory = fileSubMenu.addItem("History", event -> {
@@ -561,9 +563,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         // Copy existing values to the new array
         for (int i = 0; i < Math.min(cells.length, rows); i++) {
-            for (int j = 0; j < Math.min(cells[0].length, columns); j++) {
-                newCells[i][j] = cells[i][j];
-            }
+            System.arraycopy(cells[i], 0, newCells[i], 0, Math.min(cells[0].length, columns));
         }
 
         // Initialize new cells
@@ -617,9 +617,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (int col = 0; col < columns; col++) {
             String columnLabel = getColumnName(col);
             String cellId = "header_" + col;
-            tableBuilder.append("<th ")
-                    .append("id='").append(cellId).append("' ")
-                    .append("class='spreadsheet-header'>");
+            tableBuilder.append("<th ").append("id='").append(cellId).append("' ").append("class='spreadsheet-header'>");
             tableBuilder.append(columnLabel);
             tableBuilder.append("</th>");
         }
@@ -630,17 +628,13 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             tableBuilder.append("<tr>");
 
             // Row number cell
-            tableBuilder.append("<td class='spreadsheet-row-number'>")
-                    .append(row)
-                    .append("</td>");
+            tableBuilder.append("<td class='spreadsheet-row-number'>").append(row).append("</td>");
 
             for (int col = 0; col < columns; col++) {
                 Cell cell = cells[row][col];
                 String cellId = cell.getCellId();
 
-                tableBuilder.append("<td ")
-                        .append("id='").append(cellId).append("' ")
-                        .append("contenteditable='").append(isEditable).append("' ");
+                tableBuilder.append("<td ").append("id='").append(cellId).append("' ").append("contenteditable='").append(isEditable).append("' ");
 
                 if (cell.isFunction()) {
                     if (selectedCells.contains(cell)) {
@@ -720,11 +714,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     // New method to update a cell in the client-side
     private void updateCellInClient(String cellId, String htmlContent) {
-        getElement().executeJs(
-                "const cell = document.getElementById($0);" +
-                        "if (cell) { cell.innerHTML = $1; }",
-                cellId, htmlContent
-        );
+        getElement().executeJs("const cell = document.getElementById($0);" + "if (cell) { cell.innerHTML = $1; }", cellId, htmlContent);
     }
 
     private void recalculateCell(Cell cell) {
@@ -787,9 +777,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void calculateFunctionValue(Cell cell) {
         String functionName = cell.getFunctionName();
-        Optional<? extends SpreadsheetFunction> first = spreadsheetFunctions.stream()
-                .filter(e -> e.getName().equals(functionName))
-                .findFirst();
+        Optional<? extends SpreadsheetFunction> first = spreadsheetFunctions.stream().filter(e -> e.getName().equals(functionName)).findFirst();
 
         if (first.isPresent()) {
             cell.setValue(String.valueOf(first.get().calculate(cell.getRelatedCellsId(), getRows())));
@@ -804,9 +792,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         List<List<Cell>> rowsList = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
             List<Cell> rowList = new ArrayList<>();
-            for (int j = 0; j < columns; j++) {
-                rowList.add(cells[i][j]);
-            }
+            rowList.addAll(Arrays.asList(cells[i]).subList(0, columns));
             rowsList.add(rowList);
         }
         return rowsList;
@@ -853,158 +839,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     @ClientCallable
     public void showErrorNotification(String message) {
         super.showErrorNotification(message);
-    }
-
-    // Method to show the copy table dialog
-    private void showCopyTableDialog() {
-        Dialog dialog = new Dialog();
-        dialog.setWidth("80vw");
-
-        VerticalLayout layout = new VerticalLayout();
-
-        // Generate the table content as plain text
-        String tableText = "";
-
-        if (!selectedCells.isEmpty()) {
-            Map<String, List<Cell>> columnsMap = new HashMap<>();
-
-            for (Cell cell : selectedCells) {
-                String column = cell.getColumnSymbol();
-                columnsMap.putIfAbsent(column, new ArrayList<>());
-                columnsMap.get(column).add(cell);
-            }
-
-            boolean allSameSize = columnsMap.values().stream().map(List::size).distinct().count() == 1;
-
-            if (allSameSize) {
-                List<Integer> referenceRowNumbers = columnsMap.values().iterator().next().stream().map(cell -> cell.getRowNumber()).sorted().toList();
-
-                boolean allRowsMatch = columnsMap.values().stream().allMatch(cells -> {
-                    List<Integer> rowNumbers = cells.stream().map(cell -> cell.getRowNumber()).sorted().toList();
-                    return rowNumbers.equals(referenceRowNumbers);
-                });
-
-                if (allRowsMatch) {
-                    boolean allContinuous = true;
-                    int minRow = 0;
-                    int maxRow = 0;
-                    for (Map.Entry<String, List<Cell>> entry : columnsMap.entrySet()) {
-                        String column = entry.getKey();
-                        List<Cell> cells = entry.getValue();
-
-                        minRow = cells.stream().mapToInt(c -> c.getRowNumber()).min().orElseThrow();
-                        maxRow = cells.stream().mapToInt(c -> c.getRowNumber()).max().orElseThrow();
-
-                        Set<Integer> rowNumbers = cells.stream().map(cell -> cell.getRowNumber())
-                                .collect(Collectors.toSet());
-
-                        for (int i = minRow; i <= maxRow; i++) {
-                            if (!rowNumbers.contains(i)) {
-                                allContinuous = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (allContinuous) {
-                        showPrimaryNotification("Copy table properties applied based on selection!");
-                        tableText = generateTableText(selectedCells.stream().toList());
-                    } else {
-                        showErrorNotification("Copy table properties cannot be applied!");
-                    }
-                } else {
-                    showErrorNotification("Copy table properties cannot be applied!");
-                }
-            }
-        }
-
-        if (tableText.isEmpty()) {
-            tableText = generateTableText();
-        }
-
-        TextArea textArea = new TextArea();
-        textArea.setWidthFull();
-        textArea.setHeight("400px");
-        textArea.setValue(tableText);
-        textArea.setReadOnly(true);
-
-        // Instructions for the user
-        Span instructions = new Span("Select all the text below and copy it to your clipboard:");
-
-        // Add components to layout
-        layout.add(instructions, textArea);
-
-        Button closeButton = new Button("Close", e -> dialog.close());
-        closeButton.addClassName("option-button");
-
-        layout.add(closeButton);
-
-        dialog.add(layout);
-        dialog.open();
-    }
-
-    // Method to generate the table content as plain text
-    private String generateTableText() {
-        StringBuilder sb = new StringBuilder();
-
-        // Build header row
-        sb.append("#\t");
-        for (int col = 0; col < columns; col++) {
-            sb.append(getColumnName(col)).append("\t");
-        }
-        sb.append("\n");
-
-        // Build data rows
-        for (int row = 0; row < rows; row++) {
-            sb.append(row).append("\t");
-            for (int col = 0; col < columns; col++) {
-                Cell cell = cells[row][col];
-                String val = (cell != null && cell.getHtmlContent() != null) ? Jsoup.parse(cell.getHtmlContent()).text().replaceAll("\n", " ")
-                        .replaceAll("\t", " ") : "";
-                sb.append(val).append("\t");
-            }
-            sb.append("\n");
-        }
-
-        return sb.toString();
-    }
-
-    private String generateTableText(List<Cell> cellList) {
-        if (cellList == null || cellList.isEmpty()) {
-            return "No data available.";
-        }
-
-        StringBuilder sb = new StringBuilder();
-
-        int minRow = cellList.stream().mapToInt(e -> e.getRowNumber()).min().orElse(0);
-        int maxRow = cellList.stream().mapToInt(e -> e.getRowNumber()).max().orElse(0);
-        int minCol = cellList.stream().mapToInt(e -> e.getColumnNumber()).min().orElse(0);
-        int maxCol = cellList.stream().mapToInt(e -> e.getColumnNumber()).max().orElse(0);
-
-        sb.append("#\t");
-        for (int col = minCol; col <= maxCol; col++) {
-            sb.append(getColumnName(col)).append("\t");
-        }
-        sb.append("\n");
-
-        Map<String, Cell> cellMap = cellList.stream()
-                .collect(Collectors.toMap(
-                        cell -> cell.getColumnNumber() + "_" + cell.getRowNumber(),
-                        cell -> cell
-                ));
-
-        for (int row = minRow; row <= maxRow; row++) {
-            sb.append(row).append("\t");
-            for (int col = minCol; col <= maxCol; col++) {
-                Cell cell = cellMap.get(col + "_" + row);
-                String val = (cell != null && cell.getHtmlContent() != null) ? Jsoup.parse(cell.getHtmlContent()).text().replaceAll("\n", " ")
-                        .replaceAll("\t", " ") : "";
-                sb.append(val).append("\t");
-            }
-            sb.append("\n");
-        }
-
-        return sb.toString();
     }
 
     // New method to handle the Paste action
