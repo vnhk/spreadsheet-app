@@ -24,7 +24,7 @@ public class Cell {
     private String htmlContent;
     private String functionValue;
     private Boolean isFunction = false;
-    private Boolean function = false;
+//    private Boolean function = false;
     private Map<Integer, String> relatedCells = new HashMap<>();
     private Map<String, Cell> innerFunctionCells = new HashMap<>();
 

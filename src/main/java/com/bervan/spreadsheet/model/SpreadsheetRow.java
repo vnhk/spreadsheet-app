@@ -7,7 +7,7 @@ import java.util.UUID;
 public class SpreadsheetRow {
     public int number = 0;
     public UUID rowId = UUID.randomUUID();
-    public final List<Cell> cells = new ArrayList<>();
+    public List<Cell> cells = new ArrayList<>();
 
     public SpreadsheetRow() {
 
@@ -24,6 +24,10 @@ public class SpreadsheetRow {
         for (Cell cell : rowToCopy.getCells()) {
             addCell(cell.getColumnNumber(), cell);
         }
+    }
+
+    public void setCells(List<Cell> cells) {
+        this.cells = cells;
     }
 
     public void addCell(int columnNumber) {

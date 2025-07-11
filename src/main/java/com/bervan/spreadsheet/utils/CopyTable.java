@@ -1,6 +1,7 @@
 package com.bervan.spreadsheet.utils;
 
 import com.bervan.spreadsheet.model.Cell;
+import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
@@ -15,8 +16,8 @@ import java.util.stream.Collectors;
 public class CopyTable {
 
     // Method to show the copy table dialog
-    public static void showCopyTableDialog(Set<Cell> selectedCells, int rows, int columns, Cell[][] cells,
-                                    Function<String, Void> errorNotification, Function<String, Void> successNotification) {
+    public static void showCopyTableDialog(Set<Cell> selectedCells, int columns, List<SpreadsheetRow> spreadsheetRows,
+                                           Function<String, Void> errorNotification, Function<String, Void> successNotification) {
         Dialog dialog = new Dialog();
         dialog.setWidth("80vw");
 
@@ -78,7 +79,7 @@ public class CopyTable {
         }
 
         if (tableText.isEmpty()) {
-            tableText = generateTableText(rows, columns, cells);
+            tableText = generateTableText(columns, spreadsheetRows);
         }
 
         TextArea textArea = new TextArea();
@@ -103,7 +104,7 @@ public class CopyTable {
     }
 
     // Method to generate the table content as plain text
-    private static String generateTableText(int rows, int columns, Cell[][] cells) {
+    private static String generateTableText(int columns, List<SpreadsheetRow> spreadsheetRows) {
         StringBuilder sb = new StringBuilder();
 
         // Build header row
@@ -114,10 +115,11 @@ public class CopyTable {
         sb.append("\n");
 
         // Build data rows
-        for (int row = 0; row < rows; row++) {
-            sb.append(row).append("\t");
-            for (int col = 0; col < columns; col++) {
-                Cell cell = cells[row][col];
+        for (int rowIndex = 0; rowIndex < spreadsheetRows.size(); rowIndex++) {
+            sb.append(rowIndex).append("\t");
+            SpreadsheetRow spreadsheetRow = spreadsheetRows.get(rowIndex);
+            for (int columnIndex = 0; columnIndex < spreadsheetRow.getCells().size(); columnIndex++) {
+                Cell cell = spreadsheetRow.getCell(columnIndex);
                 String val = (cell != null && cell.getHtmlContent() != null) ? Jsoup.parse(cell.getHtmlContent()).text().replaceAll("\n", " ").replaceAll("\t", " ") : "";
                 sb.append(val).append("\t");
             }

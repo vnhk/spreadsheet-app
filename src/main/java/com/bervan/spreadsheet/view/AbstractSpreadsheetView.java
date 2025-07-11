@@ -10,6 +10,7 @@ import com.bervan.spreadsheet.functions.SpreadsheetFunction;
 import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.HistorySpreadsheet;
 import com.bervan.spreadsheet.model.Spreadsheet;
+import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.HistorySpreadsheetRepository;
 import com.bervan.spreadsheet.service.SpreadsheetRepository;
 import com.bervan.spreadsheet.service.SpreadsheetService;
@@ -32,6 +33,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.sortColumns;
 
+@Slf4j
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private static final int MAX_RECURSION_DEPTH = 100;
@@ -51,24 +54,22 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Div historyHtml = new Div();
     private final Set<Cell> selectedCells = new HashSet<>();
+    private final List<SpreadsheetFunction> spreadsheetFunctions;
+    // Map for quick access to cells by their ID
+    private final Map<String, Cell> cellMap = new HashMap<>();
     @Autowired
     private SpreadsheetRepository spreadsheetRepository;
     @Autowired
     private HistorySpreadsheetRepository historySpreadsheetRepository;
-    private final List<SpreadsheetFunction> spreadsheetFunctions;
     private Spreadsheet spreadsheetEntity;
     private Div tableHtml;
     private int rows;
     private int columns;
-    private Cell[][] cells;
+    private List<SpreadsheetRow> spreadsheetRows;
     private boolean historyShow = false;
     private List<HistorySpreadsheet> sorted = new ArrayList<>();
     private Button clearSelectionButton;
-
     private Cell focusedCell; // Keep track of the currently focused cell
-
-    // Map for quick access to cells by their ID
-    private final Map<String, Cell> cellMap = new HashMap<>();
 
     public AbstractSpreadsheetView(SpreadsheetService service, BervanLogger logger, List<? extends SpreadsheetFunction> spreadsheetFunctions) {
         this.spreadsheetService = service;
@@ -97,9 +98,15 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                     declaredField.setAccessible(true);
                 }
 
-                cells = objectMapper.readValue(body, Cell[][].class);
-                rows = cells.length;
-                columns = cells[0].length;
+                Cell[][] allCells = objectMapper.readValue(body, Cell[][].class);
+                spreadsheetRows = new ArrayList<>();
+                rows = allCells.length;
+                columns = allCells[0].length;
+                for (Cell[] rowCells : allCells) {
+                    SpreadsheetRow row = new SpreadsheetRow();
+                    row.setCells(Arrays.stream(rowCells).toList());
+                    spreadsheetRows.add(row);
+                }
 
                 for (Field declaredField : Cell.class.getDeclaredFields()) {
                     declaredField.setAccessible(false);
@@ -124,7 +131,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         // Initial table
         tableHtml = new Div();
-        tableHtml.getElement().setProperty("innerHTML", buildTable(columns, rows, cells));
+        tableHtml.getElement().setProperty("innerHTML", buildTable(columns, spreadsheetRows));
 
         // Refresh all functions before building the table
         refreshAllFunctions();
@@ -186,12 +193,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         refreshClearSelectionButtonVisibility();
     }
 
-    private String buildTable(int columns, int rows, Cell[][] cells) {
-        return buildTable(columns, rows, cells, null, true);
-    }
-
-    private String buildTable(int columns, int rows, Cell[][] cells, Set<String> changedCellIds) {
-        return buildTable(columns, rows, cells, changedCellIds, true);
+    private String buildTable(int amountOfColumns, List<SpreadsheetRow> rows) {
+        return buildTable(amountOfColumns, rows, null, true);
     }
 
     private void sortColumnsModal() {
@@ -220,7 +223,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
 
         Button okButton = new Button("Sort columns", e -> {
-            UtilsMessage utilsMessage = sortColumns(cells, columnDropdown.getValue(), orderDropdown.getValue(), columnsField.getValue(), rowsField.getValue());
+            UtilsMessage utilsMessage = sortColumns(spreadsheetRows, columnDropdown.getValue(), orderDropdown.getValue(), columnsField.getValue(), rowsField.getValue());
             if (utilsMessage.isSuccess) {
                 refreshTable();
                 showSuccessNotification(utilsMessage.message);
@@ -337,7 +340,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
 
         MenuItem copyTableItem = fileSubMenu.addItem("Copy Table", event -> {
-            CopyTable.showCopyTableDialog(selectedCells, rows, columns, cells, string -> {
+            CopyTable.showCopyTableDialog(selectedCells, columns, spreadsheetRows, string -> {
                 showErrorNotification(string);
                 return null;
             }, string -> {
@@ -359,7 +362,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void save() {
         try {
-            String body = objectMapper.writeValueAsString(cells);
+            String body = objectMapper.writeValueAsString(spreadsheetRows);
             spreadsheetEntity.setBody(body);
             spreadsheetRepository.save(spreadsheetEntity);
             reloadHistory();
@@ -376,8 +379,18 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         String tableHTML = "";
         try {
             Cell[][] historyCells = objectMapper.readValue(historySpreadsheet.getBody(), Cell[][].class);
+            List<SpreadsheetRow> historySpreadsheetRows = new ArrayList<>();
             int historyRows = historyCells.length;
             int historyColumns = historyCells[0].length;
+
+            for (int row = 0; row < historyRows; row++) {
+                SpreadsheetRow historyRow = new SpreadsheetRow();
+                historySpreadsheetRows.add(historyRow);
+                for (int col = 0; col < historyColumns; col++) {
+                    historyRow.addCell(col, historyCells[row][col]);
+                }
+            }
+
 
             // Compute the set of cell IDs that have changed
             Set<String> changedCellIds = new HashSet<>();
@@ -385,8 +398,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             for (int row = 0; row < historyRows; row++) {
                 for (int col = 0; col < historyColumns; col++) {
                     Cell currentCell = null;
-                    if (row < cells.length && col < cells[0].length) {
-                        currentCell = cells[row][col];
+                    if (row < spreadsheetRows.size() && col < spreadsheetRows.get(0).getCells().size()) {
+                        currentCell = spreadsheetRows.get(row).getCell(col);
                     }
                     Cell historyCell = historyCells[row][col];
 
@@ -399,10 +412,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 }
             }
 
-            tableHTML = buildTable(historyColumns, historyRows, historyCells, changedCellIds, false);
+            tableHTML = buildTable(historyColumns, historySpreadsheetRows, changedCellIds, false);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Could not show history change!", e);
             showErrorNotification("Could not show history change!");
         }
 
@@ -436,7 +449,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private void refreshTable() {
-        tableHtml.getElement().setProperty("innerHTML", buildTable(columns, rows, cells));
+        tableHtml.getElement().setProperty("innerHTML", buildTable(columns, spreadsheetRows));
 
         getElement().executeJs("""
                     const table = this.querySelector('table');
@@ -546,58 +559,59 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private void initializeCells() {
-        cells = new Cell[rows][columns];
-        cellMap.clear();
+        spreadsheetRows = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < columns; j++) {
-                Cell cell = new Cell("", j, i);
-                cell.setHtmlContent("");
-                cells[i][j] = cell;
-                cellMap.put(cell.getCellId(), cell);
-            }
+            spreadsheetRows.add(new SpreadsheetRow(columns));
+        }
+        cellMap.clear();
+
+        for (SpreadsheetRow spreadsheetRow : spreadsheetRows) {
+            spreadsheetRow.getCells().forEach(cell -> cellMap.put(cell.getCellId(), cell));
         }
     }
 
     private void updateCellsArray() {
-        Cell[][] newCells = new Cell[rows][columns];
-
-        // Copy existing values to the new array
-        for (int i = 0; i < Math.min(cells.length, rows); i++) {
-            System.arraycopy(cells[i], 0, newCells[i], 0, Math.min(cells[0].length, columns));
-        }
-
-        // Initialize new cells
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < columns; j++) {
-                if (newCells[i][j] == null) {
-                    Cell cell = new Cell("", j, i);
-                    cell.setHtmlContent("");
-                    newCells[i][j] = cell;
-                    cellMap.put(cell.getCellId(), cell);
-                } else {
-                    // Update cell metadata
-                    Cell cell = newCells[i][j];
-                    cell.setColumnNumber(j);
-                    cell.setRowNumber(i);
-                    cell.setColumnSymbol(getColumnName(j));
-                    cell.setCellId(cell.getColumnSymbol() + cell.getRowNumber());
-                    cellMap.put(cell.getCellId(), cell);
-                }
-            }
-        }
-
-        cells = newCells;
+        //to be changed, why rebuilt everything every time? better to have dedicated functions
+//
+//        Cell[][] newCells = new Cell[rows][columns];
+//
+//        // Copy existing values to the new array
+//        for (int i = 0; i < Math.min(spreadsheetRows.length, rows); i++) {
+//            System.arraycopy(spreadsheetRows[i], 0, newCells[i], 0, Math.min(spreadsheetRows[0].length, columns));
+//        }
+//
+//        // Initialize new cells
+//        for (int i = 0; i < rows; i++) {
+//            for (int j = 0; j < columns; j++) {
+//                if (newCells[i][j] == null) {
+//                    Cell cell = new Cell("", j, i);
+//                    cell.setHtmlContent("");
+//                    newCells[i][j] = cell;
+//                    cellMap.put(cell.getCellId(), cell);
+//                } else {
+//                    // Update cell metadata
+//                    Cell cell = newCells[i][j];
+//                    cell.setColumnNumber(j);
+//                    cell.setRowNumber(i);
+//                    cell.setColumnSymbol(getColumnName(j));
+//                    cell.setCellId(cell.getColumnSymbol() + cell.getRowNumber());
+//                    cellMap.put(cell.getCellId(), cell);
+//                }
+//            }
+//        }
+//
+//        spreadsheetRows = newCells;
     }
 
     private void rebuildCellMap() {
         cellMap.clear();
-        for (int i = 0; i < cells.length; i++) {
-            for (int j = 0; j < cells[0].length; j++) {
-                Cell cell = cells[i][j];
+        for (int rowIndex = 0; rowIndex < spreadsheetRows.size(); rowIndex++) {
+            for (int colIndex = 0; colIndex < spreadsheetRows.get(0).getCells().size(); colIndex++) {
+                Cell cell = spreadsheetRows.get(rowIndex).getCell(colIndex);
                 // Update cell IDs to start row numbering from 0
-                cell.setColumnNumber(j);
-                cell.setRowNumber(i);
-                cell.setColumnSymbol(getColumnName(j));
+                cell.setColumnNumber(colIndex);
+                cell.setRowNumber(rowIndex);
+                cell.setColumnSymbol(getColumnName(colIndex));
                 cell.setCellId(cell.getColumnSymbol() + cell.getRowNumber());
                 if (cell.getHtmlContent() == null) {
                     cell.setHtmlContent(cell.getValue() != null ? cell.getValue() : "");
@@ -607,7 +621,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         }
     }
 
-    private String buildTable(int columns, int rows, Cell[][] cells, Set<String> changedCellIds, boolean isEditable) {
+    private String buildTable(int columns, List<SpreadsheetRow> rows, Set<String> changedCellIds, boolean isEditable) {
         StringBuilder tableBuilder = new StringBuilder();
         tableBuilder.append("<table class='spreadsheet-table'>");
 
@@ -623,15 +637,18 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         }
         tableBuilder.append("</tr>");
 
-        // Build data rows
-        for (int row = 0; row < rows; row++) {
+
+        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+            SpreadsheetRow spreadsheetRow = rows.get(rowIndex);
             tableBuilder.append("<tr>");
 
             // Row number cell
-            tableBuilder.append("<td class='spreadsheet-row-number'>").append(row).append("</td>");
+            tableBuilder.append("<td class='spreadsheet-row-number'>").append(rowIndex).append("</td>");
 
-            for (int col = 0; col < columns; col++) {
-                Cell cell = cells[row][col];
+            List<Cell> cells = spreadsheetRow.getCells();
+
+            for (int cellIndex = 0; cellIndex < cells.size(); cellIndex++) {
+                Cell cell = cells.get(cellIndex);
                 String cellId = cell.getCellId();
 
                 tableBuilder.append("<td ").append("id='").append(cellId).append("' ").append("contenteditable='").append(isEditable).append("' ");
@@ -790,9 +807,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private List<List<Cell>> getRows() {
         List<List<Cell>> rowsList = new ArrayList<>();
-        for (int i = 0; i < rows; i++) {
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++) {
             List<Cell> rowList = new ArrayList<>();
-            rowList.addAll(Arrays.asList(cells[i]).subList(0, columns));
+            rowList.addAll(spreadsheetRows.get(rowIndex).getCells().subList(0, columns));
             rowsList.add(rowList);
         }
         return rowsList;
@@ -800,9 +817,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private Set<Cell> getDependentCells(String cellId) {
         Set<Cell> dependents = new HashSet<>();
-        for (int i = 0; i < cells.length; i++) {
-            for (int j = 0; j < cells[0].length; j++) {
-                Cell cell = cells[i][j];
+        for (int i = 0; i < spreadsheetRows.size(); i++) {
+            for (int j = 0; j < spreadsheetRows.get(0).getCells().size(); j++) {
+                Cell cell = spreadsheetRows.get(i).getCell(j);
                 if (cell.isFunction() && cell.getRelatedCellsId().contains(cellId)) {
                     dependents.add(cell);
                 }
@@ -813,14 +830,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void refreshAllFunctions() {
         // Recalculate all functions and update them individually
-        for (int i = 0; i < cells.length; i++) {
-            for (int j = 0; j < cells[0].length; j++) {
-                Cell cell = cells[i][j];
+        for (int rowIndex = 0; rowIndex < spreadsheetRows.size(); rowIndex++) {
+            for (int colIndex = 0; colIndex < spreadsheetRows.get(0).getCells().size(); colIndex++) {
+                Cell cell = spreadsheetRows.get(rowIndex).getCell(colIndex);
                 if (cell.isFunction()) {
                     try {
                         recalculateCell(cell);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error("refreshAllFunctions - recalculateCell failed!", e);
                         cell.setValue("ERROR");
                         cell.setHtmlContent(cell.getValue());
                         updateCellInClient(cell.getCellId(), cell.getHtmlContent());
@@ -917,8 +934,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             for (int j = 0; j < dataColumnCount; j++) {
                 int currentRow = startRow + i;
                 int currentColumn = startColumn + j;
-                if (currentRow < cells.length && currentColumn < cells[0].length) {
-                    Cell cell = cells[currentRow][currentColumn];
+                if (currentRow < spreadsheetRows.size() && currentColumn < spreadsheetRows.get(0).getCells().size()) {
+                    Cell cell = spreadsheetRows.get(currentRow).getCell(currentColumn);
                     if (cell != null && (cell.getValue() != null && !cell.getValue().isEmpty())) {
                         willOverwrite = true;
                         break;
@@ -959,8 +976,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 String cellValue = rowData.get(j);
                 int currentRow = startRow + i;
                 int currentColumn = startColumn + j;
-                if (currentRow < cells.length && currentColumn < cells[0].length) {
-                    Cell cell = cells[currentRow][currentColumn];
+                if (currentRow < spreadsheetRows.size() && currentColumn < spreadsheetRows.get(0).getCells().size()) {
+                    Cell cell = spreadsheetRows.get(currentRow).getCell(currentColumn);
                     if (cell != null) {
                         cell.setValue(cellValue);
                         cell.setHtmlContent(cellValue);

@@ -2,85 +2,84 @@ package com.bervan.spreadsheet.utils;
 
 import com.bervan.common.model.UtilsMessage;
 import com.bervan.spreadsheet.model.Cell;
-import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.google.common.base.Strings;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
+@Slf4j
 public class SpreadsheetUtils {
-    public static UtilsMessage sortColumns(Cell[][] cells, String sortColumn, String order, String columnsToBeSorted, String rows) {
+    public static UtilsMessage sortColumns(List<SpreadsheetRow> spreadsheetRows, String sortColumn, String order, String columnsToBeSorted, String rows) {
         UtilsMessage utilsMessage = new UtilsMessage();
-        String[] colonSeparated = rows.split(":");
+        String[] colonSeparatedRowsToBeSorted = rows.split(":");
 
-        if (colonSeparated.length == 2) {
+        if (colonSeparatedRowsToBeSorted.length == 2) {
             try {
-                Integer start = Integer.parseInt(colonSeparated[0].replaceAll(".*?(\\d+)$", "$1"));
-                Integer end = Integer.parseInt(colonSeparated[1].replaceAll(".*?(\\d+)$", "$1"));
+                Integer startRow = Integer.parseInt(colonSeparatedRowsToBeSorted[0].replaceAll(".*?(\\d+)$", "$1"));
+                Integer endRow = Integer.parseInt(colonSeparatedRowsToBeSorted[1].replaceAll(".*?(\\d+)$", "$1"));
 
-                if (start < 0) {
-                    start = 0;
+                if (startRow < 0) {
+                    startRow = 0;
                 }
 
-                if (end > cells.length - 1) {
-                    end = cells.length - 1;
+                if (endRow > spreadsheetRows.size() - 1) {
+                    endRow = spreadsheetRows.size() - 1;
                 }
 
-                if (start > end) {
+                if (startRow > endRow) {
                     throw new RuntimeException("Incorrect rows");
                 }
 
                 // Get the column index to sort by
                 int sortColumnIndex = getColumnIndex(sortColumn);
 
-                if (sortColumnIndex < 0 || sortColumnIndex >= cells[0].length) {
+                if (sortColumnIndex < 0 || sortColumnIndex >= spreadsheetRows.get(0).getCells().size()) {
                     throw new RuntimeException("Invalid sort column: " + sortColumn);
                 }
 
                 // Collect rows within the range
-                List<Cell[]> targetRows = new ArrayList<>();
-                for (int i = start; i <= end; i++) {
-                    targetRows.add(cells[i]);
+                List<SpreadsheetRow> targetRows = new ArrayList<>();
+                for (int i = startRow; i <= endRow; i++) {
+                    targetRows.add(spreadsheetRows.get(i));
                 }
 
                 // Define the comparator for sorting
-                Comparator<Cell[]> comparator = (row1, row2) -> {
-                    Cell cell1 = row1[sortColumnIndex];
-                    Cell cell2 = row2[sortColumnIndex];
-                    String val1 = cell1 != null ? cell1.getValue() : null;
-                    String val2 = cell2 != null ? cell2.getValue() : null;
+                Comparator<SpreadsheetRow> comparator = (row1, row2) -> {
+                    Cell cell1 = row1.getCell(sortColumnIndex);
+                    Cell cell2 = row2.getCell(sortColumnIndex);
+                    String val1 = cell1 != null ? cell1.getValue() : "";
+                    String val2 = cell2 != null ? cell2.getValue() : "";
 
                     boolean isVal1Integer = isInteger(val1);
                     boolean isVal2Integer = isInteger(val2);
 
-                    if (!isVal1Integer && !isVal2Integer) {
-                        return 0;
-                    } else if (!isVal1Integer) {
-                        return 1;
-                    } else if (!isVal2Integer) {
-                        return -1;
+                    int comparison;
+                    if (isVal1Integer && isVal2Integer) {
+                        comparison = Integer.compare(Integer.parseInt(val1), Integer.parseInt(val2));
                     } else {
-                        int comparison = Integer.compare(Integer.parseInt(val1), Integer.parseInt(val2));
-                        return "Descending".equalsIgnoreCase(order) ? -comparison : comparison;
+                        comparison = val1.compareToIgnoreCase(val2); // fallback to string comparison
                     }
+
+                    return "Descending".equalsIgnoreCase(order) ? -comparison : comparison;
                 };
 
                 // Sort the rows
                 targetRows.sort(comparator);
 
-                // Apply the sorted rows back to the original array
-                int index = start;
-                for (Cell[] sortedRow : targetRows) {
-                    cells[index] = sortedRow;
-                    index++;
+                // Apply the sorted rows back to the original list
+                for (int i = startRow; i <= endRow; i++) {
+                    spreadsheetRows.set(i, targetRows.get(i - startRow));
                 }
 
                 utilsMessage.message = "Sort applied!";
                 utilsMessage.isSuccess = true;
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("An error occurred while sorting", e);
                 utilsMessage.message = "An error occurred while sorting: " + e.getMessage();
                 utilsMessage.isError = true;
             }
@@ -90,103 +89,104 @@ public class SpreadsheetUtils {
         }
         return utilsMessage;
     }
-    public static UtilsMessage sortColumns(Spreadsheet spreadsheet, String sortColumn, String order, String columnsToBeSorted, String rows, Grid grid) {
-        UtilsMessage utilsMessage = new UtilsMessage();
-        String[] colonSeparated = rows.split(":");
-        if (colonSeparated.length == 2) {
-            try {
-                Integer start = Integer.parseInt(colonSeparated[0].replaceAll(".*?(\\d+)$", "$1"));
-                Integer end = Integer.parseInt(colonSeparated[1].replaceAll(".*?(\\d+)$", "$1"));
 
-                if (start < 0) {
-                    start = 0;
-                }
-
-                if (end > spreadsheet.getRows().size() - 1) {
-                    end = spreadsheet.getRows().size() - 1;
-                }
-
-                if (start > end) {
-                    throw new RuntimeException("Incorrect rows");
-                }
-
-                List<SpreadsheetRow> allRows = spreadsheet.getRows();
-                List<SpreadsheetRow> targetRows = new ArrayList<>();
-
-                // Collect only the rows that fall within the specified range
-                for (SpreadsheetRow row : allRows) {
-                    Integer rowNumber = row.number;
-                    if (rowNumber >= start && rowNumber <= end) {
-                        targetRows.add(row);
-                    }
-                }
-
-                Comparator<SpreadsheetRow> comparator = Comparator.comparing(row -> {
-                    Cell sortCell = row.getCell(getColumnIndex(sortColumn));
-                    String cellValue = sortCell != null ? sortCell.getValue() : null;
-
-                    // If cellValue is null or non-integer, treat it as greater than any integer value
-                    if (cellValue == null || !isInteger(cellValue)) {
-                        if ("Descending".equalsIgnoreCase(order)) {
-                            return Integer.MAX_VALUE * -1;
-                        }
-                        return Integer.MAX_VALUE; // Push null or non-integer values to the end
-                    }
-                    return Integer.parseInt(cellValue);
-                });
-
-                // Reverse the comparator if the order is "Descending"
-                if ("Descending".equalsIgnoreCase(order)) {
-                    comparator = comparator.reversed();
-                }
-
-                // Sort rows by the specified column and order
-                targetRows.sort(comparator);
-
-                // Extract the column symbols that need to be sorted (comma-separated list)
-                List<String> columnsToSort = Arrays.asList(columnsToBeSorted.split(","));
-
-                Map<Integer, List<String>> newValues = new HashMap<>();
-                int index = start;
-
-                for (int i = 0; i < targetRows.size(); i++) {
-                    SpreadsheetRow sortedRow = targetRows.get(i);
-                    newValues.put(index, new ArrayList<>());
-
-                    for (String column : columnsToSort) {
-                        newValues.get(index).add(sortedRow.getCell(getColumnIndex(column)).getValue());
-                    }
-
-                    index++;
-                }
-
-                index = start;
-                for (; index <= end; index++) {
-                    List<String> values = newValues.get(index);
-
-                    for (int i = 0; i < values.size(); i++) {
-                        int finalIndex = index;
-                        spreadsheet.getRows().stream().filter(row -> row.number == finalIndex)
-                                .findFirst().get()
-                                .setCell(getColumnIndex(columnsToSort.get(i)), values.get(i));
-                    }
-
-                }
-
-                grid.getDataProvider().refreshAll();
-                utilsMessage.message = "Sort applied!";
-                utilsMessage.isSuccess = true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                utilsMessage.message = "An error occurred while sorting: " + e.getMessage();
-                utilsMessage.isError = true;
-            }
-        } else {
-            utilsMessage.message = "Invalid sort configuration!";
-            utilsMessage.isError = true;
-        }
-        return utilsMessage;
-    }
+//    public static UtilsMessage sortColumns(Spreadsheet spreadsheet, String sortColumn, String order, String columnsToBeSorted, String rows, Grid grid) {
+//        UtilsMessage utilsMessage = new UtilsMessage();
+//        String[] colonSeparated = rows.split(":");
+//        if (colonSeparated.length == 2) {
+//            try {
+//                Integer start = Integer.parseInt(colonSeparated[0].replaceAll(".*?(\\d+)$", "$1"));
+//                Integer end = Integer.parseInt(colonSeparated[1].replaceAll(".*?(\\d+)$", "$1"));
+//
+//                if (start < 0) {
+//                    start = 0;
+//                }
+//
+//                if (end > spreadsheet.getRows().size() - 1) {
+//                    end = spreadsheet.getRows().size() - 1;
+//                }
+//
+//                if (start > end) {
+//                    throw new RuntimeException("Incorrect rows");
+//                }
+//
+//                List<SpreadsheetRow> allRows = spreadsheet.getRows();
+//                List<SpreadsheetRow> targetRows = new ArrayList<>();
+//
+//                // Collect only the rows that fall within the specified range
+//                for (SpreadsheetRow row : allRows) {
+//                    Integer rowNumber = row.number;
+//                    if (rowNumber >= start && rowNumber <= end) {
+//                        targetRows.add(row);
+//                    }
+//                }
+//
+//                Comparator<SpreadsheetRow> comparator = Comparator.comparing(row -> {
+//                    Cell sortCell = row.getCell(getColumnIndex(sortColumn));
+//                    String cellValue = sortCell != null ? sortCell.getValue() : null;
+//
+//                    // If cellValue is null or non-integer, treat it as greater than any integer value
+//                    if (cellValue == null || !isInteger(cellValue)) {
+//                        if ("Descending".equalsIgnoreCase(order)) {
+//                            return Integer.MAX_VALUE * -1;
+//                        }
+//                        return Integer.MAX_VALUE; // Push null or non-integer values to the end
+//                    }
+//                    return Integer.parseInt(cellValue);
+//                });
+//
+//                // Reverse the comparator if the order is "Descending"
+//                if ("Descending".equalsIgnoreCase(order)) {
+//                    comparator = comparator.reversed();
+//                }
+//
+//                // Sort rows by the specified column and order
+//                targetRows.sort(comparator);
+//
+//                // Extract the column symbols that need to be sorted (comma-separated list)
+//                List<String> columnsToSort = Arrays.asList(columnsToBeSorted.split(","));
+//
+//                Map<Integer, List<String>> newValues = new HashMap<>();
+//                int index = start;
+//
+//                for (int i = 0; i < targetRows.size(); i++) {
+//                    SpreadsheetRow sortedRow = targetRows.get(i);
+//                    newValues.put(index, new ArrayList<>());
+//
+//                    for (String column : columnsToSort) {
+//                        newValues.get(index).add(sortedRow.getCell(getColumnIndex(column)).getValue());
+//                    }
+//
+//                    index++;
+//                }
+//
+//                index = start;
+//                for (; index <= end; index++) {
+//                    List<String> values = newValues.get(index);
+//
+//                    for (int i = 0; i < values.size(); i++) {
+//                        int finalIndex = index;
+//                        spreadsheet.getRows().stream().filter(row -> row.number == finalIndex)
+//                                .findFirst().get()
+//                                .setCell(getColumnIndex(columnsToSort.get(i)), values.get(i));
+//                    }
+//
+//                }
+//
+//                grid.getDataProvider().refreshAll();
+//                utilsMessage.message = "Sort applied!";
+//                utilsMessage.isSuccess = true;
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                utilsMessage.message = "An error occurred while sorting: " + e.getMessage();
+//                utilsMessage.isError = true;
+//            }
+//        } else {
+//            utilsMessage.message = "Invalid sort configuration!";
+//            utilsMessage.isError = true;
+//        }
+//        return utilsMessage;
+//    }
 
     public static int getRowNumberFromColumn(String input) {
         String numberPart = input.replaceAll("[^0-9]", "");
