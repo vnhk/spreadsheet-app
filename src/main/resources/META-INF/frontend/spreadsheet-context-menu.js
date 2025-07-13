@@ -25,6 +25,7 @@ window.initContextMenu = function (serverRef) {
             menu.innerHTML = `
                 <div onclick="window.addColumnLeft()">➕ Add column left</div>
                 <div onclick="window.addColumnRight()">➕ Add column right</div>
+                <div onclick="window.duplicateColumn()">📄📄 Duplicate</div>
                 <div onclick="window.deleteColumn()">❌ Delete column</div>
             `;
             document.body.appendChild(menu);
@@ -45,6 +46,12 @@ window.initContextMenu = function (serverRef) {
     window.addColumnRight = () => {
         const index = parseInt(document.getElementById('custom-context-menu').getAttribute('data-index'));
         serverRef.$server.addColumnRight(index);
+        hideContextMenu();
+    };
+
+    window.duplicateColumn = () => {
+        const index = parseInt(document.getElementById('custom-context-menu').getAttribute('data-index'));
+        serverRef.$server.duplicateColumn(index);
         hideContextMenu();
     };
 

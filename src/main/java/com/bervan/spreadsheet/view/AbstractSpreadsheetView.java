@@ -91,6 +91,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     @ClientCallable
+    public void duplicateColumn(int columnIndex) {
+        System.out.println("duplicateColumn");
+    }
+
+    @ClientCallable
     public void addColumnRight(int columnIndex) {
         System.out.println("addColumnRight");
     }
