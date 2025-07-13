@@ -23,6 +23,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
+import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 import static com.bervan.spreadsheet.utils.SpreadsheetUtils.sortColumns;
 
 @Slf4j
+@JsModule("./spreadsheet-context-menu.js")
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private static final int MAX_RECURSION_DEPTH = 100;
@@ -81,6 +83,21 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     public void setParameter(BeforeEvent event, String s) {
         String spreadsheetName = event.getRouteParameters().get("___url_parameter").orElse(UUID.randomUUID().toString());
         init(spreadsheetName);
+    }
+
+    @ClientCallable
+    public void addColumnLeft(int columnIndex) {
+        System.out.println("addColumnLeft");
+    }
+
+    @ClientCallable
+    public void addColumnRight(int columnIndex) {
+        System.out.println("addColumnRight");
+    }
+
+    @ClientCallable
+    public void deleteColumn(int columnIndex) {
+        System.out.println("deleteColumn");
     }
 
     private void init(String name) {
@@ -631,18 +648,19 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         for (int col = 0; col < columns; col++) {
             String columnLabel = getColumnName(col);
             String cellId = "header_" + col;
-            tableBuilder.append("<th ").append("id='").append(cellId).append("' ").append("class='spreadsheet-header'>");
-            tableBuilder.append(columnLabel);
-            tableBuilder.append("</th>");
+            tableBuilder.append("<th ")
+                    .append("id='").append(cellId).append("' ")
+                    .append("class='spreadsheet-header' ")
+                    .append("data-column-index='").append(col).append("'>")
+                    .append(columnLabel)
+                    .append("</th>");
         }
         tableBuilder.append("</tr>");
-
 
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             SpreadsheetRow spreadsheetRow = rows.get(rowIndex);
             tableBuilder.append("<tr>");
 
-            // Row number cell
             tableBuilder.append("<td class='spreadsheet-row-number'>").append(rowIndex).append("</td>");
 
             List<Cell> cells = spreadsheetRow.getCells();
@@ -651,24 +669,21 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 Cell cell = cells.get(cellIndex);
                 String cellId = cell.getCellId();
 
-                tableBuilder.append("<td ").append("id='").append(cellId).append("' ").append("contenteditable='").append(isEditable).append("' ");
+                tableBuilder.append("<td ")
+                        .append("id='").append(cellId).append("' ")
+                        .append("class='spreadsheet-cell' ")
+                        .append("data-column-index='").append(cellIndex).append("' ")
+                        .append("contenteditable='").append(isEditable).append("' ");
 
-                if (cell.isFunction()) {
-                    if (selectedCells.contains(cell)) {
-                        tableBuilder.append("class='spreadsheet-cell selected-cell spreadsheet-cell-function'");
-                    } else {
-                        tableBuilder.append("class='spreadsheet-cell spreadsheet-cell-function'");
-                    }
-                } else {
-                    if (selectedCells.contains(cell)) {
-                        tableBuilder.append("class='spreadsheet-cell selected-cell'");
-                    } else {
-                        tableBuilder.append("class='spreadsheet-cell'");
-                    }
+                if (selectedCells.contains(cell)) {
+                    tableBuilder.append("class='spreadsheet-cell selected-cell");
+                    if (cell.isFunction()) tableBuilder.append(" spreadsheet-cell-function");
+                    tableBuilder.append("' ");
+                } else if (cell.isFunction()) {
+                    tableBuilder.append("class='spreadsheet-cell spreadsheet-cell-function' ");
                 }
 
-
-                // If the cell is in changedCellIds, add style
+                // Change the cell color if it has been modified
                 if (changedCellIds != null && changedCellIds.contains(cellId)) {
                     tableBuilder.append(" style='background-color:red; color:white;' ");
                 }
@@ -687,6 +702,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         }
 
         tableBuilder.append("</table>");
+
+        getElement().executeJs("window.initContextMenu($0)", getElement());
+
         return tableBuilder.toString();
     }
 
