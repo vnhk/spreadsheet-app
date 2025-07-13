@@ -70,6 +70,12 @@ class SpreadsheetUtilsTest {
 
         Assertions.assertEquals("Household Shopping", cells.get(13).getCell(0).getValue());
         Assertions.assertEquals("2000", cells.get(13).getCell(1).getValue());
+
+        for (int i = 0; i < cells.size(); i++) {
+            SpreadsheetRow row = cells.get(i);
+
+            Assertions.assertEquals(String.valueOf(i + 1), row.getCell(2).getValue(), "Index mismatch at row " + i);
+        }
     }
 
     @Test
@@ -124,13 +130,21 @@ class SpreadsheetUtilsTest {
 
         Assertions.assertEquals("Investing", cells.get(13).getCell(0).getValue());
         Assertions.assertEquals("0", cells.get(13).getCell(1).getValue());
+
+        for (int i = 0; i < cells.size(); i++) {
+            SpreadsheetRow row = cells.get(i);
+
+            Assertions.assertEquals(String.valueOf(i + 1), row.getCell(2).getValue(), "Index mismatch at row " + i);
+        }
+
     }
 
     private List<SpreadsheetRow> initializeTestCells() {
-        Cell[][] cells = new Cell[14][2];
+        Cell[][] cells = new Cell[14][3];
 
         cells[0][0] = new Cell("Expense:", 0, 0);
         cells[0][1] = new Cell("Cost:", 1, 0);
+        cells[0][2] = new Cell("Index:", 2, 0);
 
         cells[1][0] = new Cell("Household Shopping", 0, 1);
         cells[1][1] = new Cell("2000", 1, 1);
@@ -170,6 +184,10 @@ class SpreadsheetUtilsTest {
 
         cells[13][0] = new Cell("English", 0, 13);
         cells[13][1] = new Cell("400", 1, 13);
+
+        for (int i = 0; i < cells.length; i++) {
+            cells[i][2] = new Cell(String.valueOf(i + 1), 2, i);
+        }
 
         List<SpreadsheetRow> result = new ArrayList<>();
 

@@ -8,9 +8,9 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 public class SpreadsheetUtils {
@@ -23,57 +23,66 @@ public class SpreadsheetUtils {
                 Integer startRow = Integer.parseInt(colonSeparatedRowsToBeSorted[0].replaceAll(".*?(\\d+)$", "$1"));
                 Integer endRow = Integer.parseInt(colonSeparatedRowsToBeSorted[1].replaceAll(".*?(\\d+)$", "$1"));
 
-                if (startRow < 0) {
-                    startRow = 0;
-                }
+                if (startRow < 0) startRow = 0;
+                if (endRow > spreadsheetRows.size() - 1) endRow = spreadsheetRows.size() - 1;
+                if (startRow > endRow) throw new RuntimeException("Incorrect rows");
 
-                if (endRow > spreadsheetRows.size() - 1) {
-                    endRow = spreadsheetRows.size() - 1;
-                }
+                // Column indices to swap
+                List<Integer> columnIndicesToSwap = Arrays.stream(columnsToBeSorted.split(","))
+                        .map(String::trim)
+                        .map(SpreadsheetUtils::getColumnIndex)
+                        .filter(i -> i >= 0)
+                        .toList();
 
-                if (startRow > endRow) {
-                    throw new RuntimeException("Incorrect rows");
-                }
-
-                // Get the column index to sort by
                 int sortColumnIndex = getColumnIndex(sortColumn);
-
                 if (sortColumnIndex < 0 || sortColumnIndex >= spreadsheetRows.get(0).getCells().size()) {
                     throw new RuntimeException("Invalid sort column: " + sortColumn);
                 }
 
-                // Collect rows within the range
-                List<SpreadsheetRow> targetRows = new ArrayList<>();
+                // Extract target rows and create sortable pairs: [sortKey, map of columnIndex -> value]
+                List<Map<Integer, String>> extractedValues = new ArrayList<>();
+                List<String> sortKeys = new ArrayList<>();
+
                 for (int i = startRow; i <= endRow; i++) {
-                    targetRows.add(spreadsheetRows.get(i));
+                    SpreadsheetRow row = spreadsheetRows.get(i);
+                    Map<Integer, String> valueMap = new HashMap<>();
+                    for (int colIndex : columnIndicesToSwap) {
+                        valueMap.put(colIndex, row.getCell(colIndex).getValue());
+                    }
+                    extractedValues.add(valueMap);
+
+                    String sortKey = row.getCell(sortColumnIndex).getValue();
+                    sortKeys.add(sortKey);
                 }
 
-                // Define the comparator for sorting
-                Comparator<SpreadsheetRow> comparator = (row1, row2) -> {
-                    Cell cell1 = row1.getCell(sortColumnIndex);
-                    Cell cell2 = row2.getCell(sortColumnIndex);
-                    String val1 = cell1 != null ? cell1.getValue() : "";
-                    String val2 = cell2 != null ? cell2.getValue() : "";
+                // Sort the indices based on sortKey and order
+                List<Integer> sortedIndices = IntStream.range(0, sortKeys.size())
+                        .boxed()
+                        .sorted((i1, i2) -> {
+                            String val1 = sortKeys.get(i1);
+                            String val2 = sortKeys.get(i2);
 
-                    boolean isVal1Integer = isInteger(val1);
-                    boolean isVal2Integer = isInteger(val2);
+                            boolean isInt1 = isInteger(val1);
+                            boolean isInt2 = isInteger(val2);
 
-                    int comparison;
-                    if (isVal1Integer && isVal2Integer) {
-                        comparison = Integer.compare(Integer.parseInt(val1), Integer.parseInt(val2));
-                    } else {
-                        comparison = val1.compareToIgnoreCase(val2); // fallback to string comparison
-                    }
+                            int cmp;
+                            if (isInt1 && isInt2) {
+                                cmp = Integer.compare(Integer.parseInt(val1), Integer.parseInt(val2));
+                            } else {
+                                cmp = val1.compareToIgnoreCase(val2);
+                            }
 
-                    return "Descending".equalsIgnoreCase(order) ? -comparison : comparison;
-                };
+                            return "Descending".equalsIgnoreCase(order) ? -cmp : cmp;
+                        })
+                        .collect(Collectors.toList());
 
-                // Sort the rows
-                targetRows.sort(comparator);
-
-                // Apply the sorted rows back to the original list
+                // Apply sorted values back only to selected columns
                 for (int i = startRow; i <= endRow; i++) {
-                    spreadsheetRows.set(i, targetRows.get(i - startRow));
+                    SpreadsheetRow row = spreadsheetRows.get(i);
+                    Map<Integer, String> sortedValueMap = extractedValues.get(sortedIndices.get(i - startRow));
+                    for (Map.Entry<Integer, String> entry : sortedValueMap.entrySet()) {
+                        row.getCell(entry.getKey()).setValue(entry.getValue());
+                    }
                 }
 
                 utilsMessage.message = "Sort applied!";
