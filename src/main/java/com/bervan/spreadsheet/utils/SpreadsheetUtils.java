@@ -1,103 +1,106 @@
 package com.bervan.spreadsheet.utils;
 
 import com.bervan.common.model.UtilsMessage;
-import com.bervan.spreadsheet.model.Cell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.google.common.base.Strings;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.List;
 
 @Slf4j
 public class SpreadsheetUtils {
+
+    //does sort columns make sense? What if we sort cells that are used somewhere in a formula? should we update it or not?
+
     public static UtilsMessage sortColumns(List<SpreadsheetRow> spreadsheetRows, String sortColumn, String order, String columnsToBeSorted, String rows) {
-        UtilsMessage utilsMessage = new UtilsMessage();
-        String[] colonSeparatedRowsToBeSorted = rows.split(":");
-
-        if (colonSeparatedRowsToBeSorted.length == 2) {
-            try {
-                Integer startRow = Integer.parseInt(colonSeparatedRowsToBeSorted[0].replaceAll(".*?(\\d+)$", "$1"));
-                Integer endRow = Integer.parseInt(colonSeparatedRowsToBeSorted[1].replaceAll(".*?(\\d+)$", "$1"));
-
-                if (startRow < 0) startRow = 0;
-                if (endRow > spreadsheetRows.size() - 1) endRow = spreadsheetRows.size() - 1;
-                if (startRow > endRow) throw new RuntimeException("Incorrect rows");
-
-                // Column indices to swap
-                List<Integer> columnIndicesToSwap = Arrays.stream(columnsToBeSorted.split(","))
-                        .map(String::trim)
-                        .map(SpreadsheetUtils::getColumnIndex)
-                        .filter(i -> i >= 0)
-                        .toList();
-
-                int sortColumnIndex = getColumnIndex(sortColumn);
-                if (sortColumnIndex < 0 || sortColumnIndex >= spreadsheetRows.get(0).getCells().size()) {
-                    throw new RuntimeException("Invalid sort column: " + sortColumn);
-                }
-
-                // Extract target rows and create sortable pairs: [sortKey, map of columnIndex -> value]
-                List<Map<Integer, String>> extractedValues = new ArrayList<>();
-                List<String> sortKeys = new ArrayList<>();
-
-                for (int i = startRow; i <= endRow; i++) {
-                    SpreadsheetRow row = spreadsheetRows.get(i);
-                    Map<Integer, String> valueMap = new HashMap<>();
-                    for (int colIndex : columnIndicesToSwap) {
-                        valueMap.put(colIndex, row.getCell(colIndex).getValue());
-                    }
-                    extractedValues.add(valueMap);
-
-                    String sortKey = row.getCell(sortColumnIndex).getValue();
-                    sortKeys.add(sortKey);
-                }
-
-                // Sort the indices based on sortKey and order
-                List<Integer> sortedIndices = IntStream.range(0, sortKeys.size())
-                        .boxed()
-                        .sorted((i1, i2) -> {
-                            String val1 = sortKeys.get(i1);
-                            String val2 = sortKeys.get(i2);
-
-                            boolean isInt1 = isInteger(val1);
-                            boolean isInt2 = isInteger(val2);
-
-                            int cmp;
-                            if (isInt1 && isInt2) {
-                                cmp = Integer.compare(Integer.parseInt(val1), Integer.parseInt(val2));
-                            } else {
-                                cmp = val1.compareToIgnoreCase(val2);
-                            }
-
-                            return "Descending".equalsIgnoreCase(order) ? -cmp : cmp;
-                        })
-                        .collect(Collectors.toList());
-
-                // Apply sorted values back only to selected columns
-                for (int i = startRow; i <= endRow; i++) {
-                    SpreadsheetRow row = spreadsheetRows.get(i);
-                    Map<Integer, String> sortedValueMap = extractedValues.get(sortedIndices.get(i - startRow));
-                    for (Map.Entry<Integer, String> entry : sortedValueMap.entrySet()) {
-                        row.getCell(entry.getKey()).setValue(entry.getValue());
-                    }
-                }
-
-                utilsMessage.message = "Sort applied!";
-                utilsMessage.isSuccess = true;
-            } catch (Exception e) {
-                log.error("An error occurred while sorting", e);
-                utilsMessage.message = "An error occurred while sorting: " + e.getMessage();
-                utilsMessage.isError = true;
-            }
-        } else {
-            utilsMessage.message = "Invalid sort configuration!";
-            utilsMessage.isError = true;
-        }
-        return utilsMessage;
+        log.error(" sortColumns not implemented");
+        return new UtilsMessage();
     }
+//        UtilsMessage utilsMessage = new UtilsMessage();
+//        String[] colonSeparatedRowsToBeSorted = rows.split(":");
+//
+//        if (colonSeparatedRowsToBeSorted.length == 2) {
+//            try {
+//                Integer startRow = Integer.parseInt(colonSeparatedRowsToBeSorted[0].replaceAll(".*?(\\d+)$", "$1"));
+//                Integer endRow = Integer.parseInt(colonSeparatedRowsToBeSorted[1].replaceAll(".*?(\\d+)$", "$1"));
+//
+//                if (startRow < 0) startRow = 0;
+//                if (endRow > spreadsheetRows.size() - 1) endRow = spreadsheetRows.size() - 1;
+//                if (startRow > endRow) throw new RuntimeException("Incorrect rows");
+//
+//                // Column indices to swap
+//                List<Integer> columnIndicesToSwap = Arrays.stream(columnsToBeSorted.split(","))
+//                        .map(String::trim)
+//                        .map(SpreadsheetUtils::getColumnIndex)
+//                        .filter(i -> i >= 0)
+//                        .toList();
+//
+//                int sortColumnIndex = getColumnIndex(sortColumn);
+//                if (sortColumnIndex < 0 || sortColumnIndex >= spreadsheetRows.get(0).getCells().size()) {
+//                    throw new RuntimeException("Invalid sort column: " + sortColumn);
+//                }
+//
+//                // Extract target rows and create sortable pairs: [sortKey, map of columnIndex -> value]
+//                List<Map<Integer, String>> extractedValues = new ArrayList<>();
+//                List<String> sortKeys = new ArrayList<>();
+//
+//                for (int i = startRow; i <= endRow; i++) {
+//                    SpreadsheetRow row = spreadsheetRows.get(i);
+//                    Map<Integer, String> valueMap = new HashMap<>();
+//                    for (int colIndex : columnIndicesToSwap) {
+//                        valueMap.put(colIndex, row.getCell(colIndex).getValue());
+//                    }
+//                    extractedValues.add(valueMap);
+//
+//                    String sortKey = row.getCell(sortColumnIndex).getValue();
+//                    sortKeys.add(sortKey);
+//                }
+//
+//                // Sort the indices based on sortKey and order
+//                List<Integer> sortedIndices = IntStream.range(0, sortKeys.size())
+//                        .boxed()
+//                        .sorted((i1, i2) -> {
+//                            String val1 = sortKeys.get(i1);
+//                            String val2 = sortKeys.get(i2);
+//
+//                            boolean isInt1 = isInteger(val1);
+//                            boolean isInt2 = isInteger(val2);
+//
+//                            int cmp;
+//                            if (isInt1 && isInt2) {
+//                                cmp = Integer.compare(Integer.parseInt(val1), Integer.parseInt(val2));
+//                            } else {
+//                                cmp = val1.compareToIgnoreCase(val2);
+//                            }
+//
+//                            return "Descending".equalsIgnoreCase(order) ? -cmp : cmp;
+//                        })
+//                        .collect(Collectors.toList());
+//
+//                // Apply sorted values back only to selected columns
+//                for (int i = startRow; i <= endRow; i++) {
+//                    SpreadsheetRow row = spreadsheetRows.get(i);
+//                    Map<Integer, String> sortedValueMap = extractedValues.get(sortedIndices.get(i - startRow));
+//                    for (Map.Entry<Integer, String> entry : sortedValueMap.entrySet()) {
+//                        row.getCell(entry.getKey()).setValue(entry.getValue());
+//                    }
+//                }
+//
+//                utilsMessage.message = "Sort applied!";
+//                utilsMessage.isSuccess = true;
+//            } catch (Exception e) {
+//                log.error("An error occurred while sorting", e);
+//                utilsMessage.message = "An error occurred while sorting: " + e.getMessage();
+//                utilsMessage.isError = true;
+//            }
+//        } else {
+//            utilsMessage.message = "Invalid sort configuration!";
+//            utilsMessage.isError = true;
+//        }
+//        return utilsMessage;
+//    }
 
 //    public static UtilsMessage sortColumns(Spreadsheet spreadsheet, String sortColumn, String order, String columnsToBeSorted, String rows, Grid grid) {
 //        UtilsMessage utilsMessage = new UtilsMessage();
@@ -248,81 +251,5 @@ public class SpreadsheetUtils {
             columnIndex = columnIndex / 26 - 1;
         }
         return label.toString();
-    }
-
-    public static void shiftRowsInFunctionsToRowPlus1(int oldRowIndex, List<SpreadsheetRow> rows) {
-        if (oldRowIndex + 1 > rows.size()) {
-            return;
-        }
-
-        List<Integer> spreadsheetRowsToShift = rows.subList(oldRowIndex + 1, rows.size())
-                .stream().map(e -> e.number)
-                .toList();
-
-        for (SpreadsheetRow spreadsheetRow : rows) {
-            for (Cell cell : spreadsheetRow.getCells()) {
-                if (cell.isFunction()) {
-                    for (int i = 0; i < cell.getRelatedCellsId().size(); i++) {
-                        String relatedCell = cell.getRelatedCellsId().get(i);
-                        Integer rowNumber = SpreadsheetUtils.getRowNumberFromColumn(relatedCell);
-                        if (spreadsheetRowsToShift.contains(rowNumber)) {
-                            String newRelatedCell = SpreadsheetUtils.incrementRowIndexInColumnName(relatedCell);
-                            cell.updateFunctionRelatedCell(relatedCell, newRelatedCell);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    public static void shiftColumnsPlus1InFunctions(int columnIndex, List<SpreadsheetRow> rows) {
-        SpreadsheetRow spreadsheetRow0 = rows.get(0); //it must exist to use this function
-        List<String> affectedColumns = spreadsheetRow0.getCells().stream().filter(e -> e.getColumnNumber() > columnIndex)
-                .map(e -> e.getColumnSymbol())
-                .toList();
-        // > or >= ?????
-
-        //each affected column in any function in any cell has to be updated + 1
-        for (SpreadsheetRow spreadsheetRow : rows) {
-            for (Cell cell : spreadsheetRow.getCells()) {
-                if (cell.isFunction()) {
-                    for (int i = 0; i < cell.getRelatedCellsId().size(); i++) {
-                        String relatedCell = cell.getRelatedCellsId().get(i);
-                        String columnHeader = SpreadsheetUtils.getColumnHeader(relatedCell);
-                        if (affectedColumns.contains(columnHeader)) {
-                            String newRelatedCell = SpreadsheetUtils.incrementColumnIndexInColumnName(relatedCell);
-                            cell.updateFunctionRelatedCell(relatedCell, newRelatedCell);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static boolean isInteger(String str) {
-        try {
-            Integer.parseInt(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
-    public static boolean isLiteralValue(String relatedCell) {
-        try {
-            String columnHeader = getColumnHeader(relatedCell);
-            int rowNumberFromColumn = getRowNumberFromColumn(relatedCell);
-
-            if (!Strings.isNullOrEmpty(columnHeader)
-                    && !columnHeader.equals(relatedCell)
-                    && rowNumberFromColumn != Integer.parseInt(relatedCell)) {
-                return false;
-            }
-
-            return true;
-        } catch (Exception e) {
-            return true;
-        }
     }
 }

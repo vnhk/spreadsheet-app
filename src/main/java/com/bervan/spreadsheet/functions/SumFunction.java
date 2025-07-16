@@ -1,34 +1,23 @@
 package com.bervan.spreadsheet.functions;
 
-import com.bervan.spreadsheet.model.Cell;
-
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
 public class SumFunction implements SpreadsheetFunction {
+
     @Override
-    public String calculate(List<String> allParams, List<List<Cell>> rows) {
-        try {
-            List<Object> params = getParams(allParams, rows);
-
-            double res = 0;
-            for (int i = 0; i < params.size(); i++) {
-                try {
-                    res += getDouble(params, i);
-                } catch (NumberFormatException e) {
-                    //we ignore it, because we want to make this function working for empty values
-                }
-            }
-
-            return String.valueOf(res);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "ERROR!";
+    public FunctionArgument calculate(List<FunctionArgument> args) {
+        if (args.isEmpty()) {
+            throw new IllegalArgumentException("Function '" + getName() + "' requires at least one argument.");
         }
-    }
 
+        double sum = args.stream()
+                .mapToDouble(FunctionArgument::asDouble)
+                .sum();
+        return new ConstantArgument(sum);
+    }
 
     @Override
     public String getInfo() {

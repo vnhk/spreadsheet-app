@@ -1,47 +1,47 @@
-package com.bervan.spreadsheet.functions;
-
-import com.bervan.spreadsheet.model.Cell;
-
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-
-@Component
-public class DivisionFunction implements SpreadsheetFunction {
-    @Override
-    public String calculate(List<String> allParams, List<List<Cell>> rows) {
-        try {
-            List<Object> params = getParams_careAboutOrder(allParams, rows);
-
-            double res = getDouble(params, 0);
-
-            for (int i = 1; i < params.size(); i++) {
-                try {
-                    res = res / getDouble(params, i);
-                } catch (NumberFormatException e) {
-                    //we ignore it, because we want to make this function working for empty values
-                }
-            }
-
-            return String.valueOf(res);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "ERROR!";
-        }
-    }
-
-    @Override
-    public String getInfo() {
-        return """ 
-                Examples: <br>
-                    (a) =/(A1,10) <br>
-                    (b) =/(C0:C10) <br>
-                    (c) =/(C1,B2,G10)
-                """;
-    }
-
-    @Override
-    public String getName() {
-        return "/";
-    }
-}
+//package com.bervan.spreadsheet.functions;
+//
+//import com.bervan.spreadsheet.model.Cell;
+//
+//import org.springframework.stereotype.Component;
+//
+//import java.util.List;
+//
+//@Component
+//public class DivisionFunction implements SpreadsheetFunction {
+//    @Override
+//    public String calculate(List<String> allParams, List<List<Cell>> rows) {
+//        try {
+//            List<Object> params = getParams_careAboutOrder(allParams, rows);
+//
+//            double res = getDouble(params, 0);
+//
+//            for (int i = 1; i < params.size(); i++) {
+//                try {
+//                    res = res / getDouble(params, i);
+//                } catch (NumberFormatException e) {
+//                    //we ignore it, because we want to make this function working for empty values
+//                }
+//            }
+//
+//            return String.valueOf(res);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "ERROR!";
+//        }
+//    }
+//
+//    @Override
+//    public String getInfo() {
+//        return """
+//                Examples: <br>
+//                    (a) =/(A1,10) <br>
+//                    (b) =/(C0:C10) <br>
+//                    (c) =/(C1,B2,G10)
+//                """;
+//    }
+//
+//    @Override
+//    public String getName() {
+//        return "/";
+//    }
+//}
