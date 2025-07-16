@@ -4,8 +4,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component
+@Component(value = SumFunction.SUM_FUNCTION_NAME)
 public class SumFunction implements SpreadsheetFunction {
+    public final static String SUM_FUNCTION_NAME = "+";
 
     @Override
     public FunctionArgument calculate(List<FunctionArgument> args) {
@@ -31,6 +32,6 @@ public class SumFunction implements SpreadsheetFunction {
 
     @Override
     public String getName() {
-        return "+";
+        return SUM_FUNCTION_NAME;
     }
 }

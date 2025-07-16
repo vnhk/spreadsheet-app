@@ -24,4 +24,9 @@ public class ConstantArgument implements FunctionArgument {
     public String asText() {
         return String.valueOf(value);
     }
+
+    @Override
+    public Object asObject() {
+        return value;
+    }
 }

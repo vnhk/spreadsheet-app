@@ -1,5 +1,6 @@
 package com.bervan.spreadsheet.functions;
 
+import com.bervan.spreadsheet.model.SpreadsheetRow;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -17,7 +18,7 @@ public class FormulaParser {
         this.cellResolver = cellResolver;
     }
 
-    public FunctionArgument evaluate(String formula) {
+    public FunctionArgument evaluate(String formula, List<SpreadsheetRow> rows) {
         if (!formula.startsWith("=")) {
             throw new IllegalArgumentException("Not a formula: " + formula);
         }
@@ -32,27 +33,27 @@ public class FormulaParser {
         String functionName = content.substring(0, parenIndex).trim();
         String argsString = content.substring(parenIndex + 1, content.length() - 1); // between (...)
 
-        List<FunctionArgument> args = parseArguments(argsString);
+        List<FunctionArgument> args = parseArguments(argsString, rows);
         SpreadsheetFunction function = functionRegistry.getFunction(functionName)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown function: " + functionName));
 
         return function.calculate(args);
     }
 
-    private List<FunctionArgument> parseArguments(String argsString) {
+    private List<FunctionArgument> parseArguments(String argsString, List<SpreadsheetRow> rows) {
         if (argsString.isBlank()) {
             return Collections.emptyList();
         }
 
         return Arrays.stream(argsString.split(","))
                 .map(String::trim)
-                .map(this::toArgument)
+                .map(e -> toArgument(e, rows))
                 .collect(Collectors.toList());
     }
 
-    private FunctionArgument toArgument(String raw) {
+    private FunctionArgument toArgument(String raw, List<SpreadsheetRow> rows) {
         if (raw.matches("[A-Z]+\\d+")) {
-            return cellResolver.resolve(raw); // ex. "A1"
+            return cellResolver.resolve(raw, rows); // ex. "A1"
         }
 
         try {

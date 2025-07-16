@@ -1,8 +1,6 @@
 package com.bervan.spreadsheet.view;
 
 import com.bervan.common.AbstractPageView;
-import com.bervan.spreadsheet.functions.FormulaParser;
-import com.bervan.spreadsheet.functions.SpreadsheetFunction;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
@@ -24,14 +22,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private static final int MAX_RECURSION_DEPTH = 100;
     private final SpreadsheetService spreadsheetService;
-    private final FormulaParser formulaParser;
-    private final List<SpreadsheetFunction> spreadsheetFunctions;
 
 
-    public AbstractSpreadsheetView(SpreadsheetService service, FormulaParser formulaParser, List<? extends SpreadsheetFunction> spreadsheetFunctions) {
+    public AbstractSpreadsheetView(SpreadsheetService service) {
         this.spreadsheetService = service;
-        this.formulaParser = formulaParser;
-        this.spreadsheetFunctions = (List<SpreadsheetFunction>) spreadsheetFunctions;
     }
 
     @Override
@@ -43,8 +37,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private void init(String spreadsheetName) {
         // Load spreadsheet rows from service
         List<SpreadsheetRow> rows = getRows(spreadsheetName);
-
-
+        spreadsheetService.evaluateAllFormulas(rows);
         // Create editable HTML table
         Div div = createHTMLTable(rows);
 
@@ -55,62 +48,78 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Element table = new Element("table");
         table.getStyle().set("border-collapse", "collapse").set("width", "100%");
 
-        // Add column headers (A, B, C...)
+        // Create the first row with column headers
         Element headerRow = new Element("tr");
 
-        // Top-left empty cell (for row numbers)
+        // Top-left corner cell (empty, for alignment with row numbers)
         Element emptyHeader = new Element("th");
         emptyHeader.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
         headerRow.appendChild(emptyHeader);
 
         if (!rows.isEmpty()) {
-            int columnCount = rows.get(0).cells.size();
-            for (int i = 0; i < columnCount; i++) {
-                Element th = new Element("th");
-                th.setText(Character.toString((char) ('A' + i))); // A, B, C, ...
-                th.getStyle().set("border", "1px solid white")
-                        .set("padding", "5px")
-                        .set("text-align", "center");
-                headerRow.appendChild(th);
-            }
+            addColumnHeaders(rows, headerRow); // Add column labels: A, B, C...
         }
 
         table.appendChild(headerRow);
 
-        // Add row data with row numbers on the left
+        // Add each data row
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             SpreadsheetRow row = rows.get(rowIndex);
             Element tr = new Element("tr");
 
-            // Add row number (1, 2, 3...) as first column
-            Element rowNumberCell = new Element("th");
-            rowNumberCell.setText(String.valueOf(rowIndex + 1));
-            rowNumberCell.getStyle().set("border", "1px solid #ccc")
-                    .set("padding", "5px")
-                    .set("text-align", "center");
-            tr.appendChild(rowNumberCell);
+            addRowNumbersAsFirstColumn(rowIndex, tr); // Add row number (1, 2, 3...)
 
-            // Add editable input cells
-            for (SpreadsheetCell cell : row.cells) {
-                Element td = new Element("td");
-                td.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
-
-                // Create input element for editable cell value
-                Input input = new Input();
-                input.getElement().setAttribute("value", String.valueOf(cell.getValue()));
-                input.getElement().getStyle().set("width", "100%");
-                input.getElement().setAttribute("data-cell-id", cell.getCellId());
-
-                td.appendChild(input.getElement());
-                tr.appendChild(td);
-            }
+            addEditableInputCells(row, tr); // Add editable <input> elements for each cell
 
             table.appendChild(tr);
         }
 
+        // Wrap the table in a Vaadin Div component
         Div div = new Div();
         div.getElement().appendChild(table);
         return div;
+    }
+
+    // Creates column headers A, B, C, etc.
+    private void addColumnHeaders(List<SpreadsheetRow> rows, Element headerRow) {
+        int columnCount = rows.get(0).cells.size();
+        for (int i = 0; i < columnCount; i++) {
+            Element th = new Element("th");
+            th.setText(Character.toString((char) ('A' + i))); // Convert 0 → 'A', 1 → 'B', etc.
+            th.getStyle()
+                    .set("border", "1px solid white")
+                    .set("padding", "5px")
+                    .set("text-align", "center");
+            headerRow.appendChild(th);
+        }
+    }
+
+    // Adds editable input cells to a given table row
+    private void addEditableInputCells(SpreadsheetRow row, Element tr) {
+        for (SpreadsheetCell cell : row.cells) {
+            Element td = new Element("td");
+            td.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
+
+            // Editable input for cell value
+            Input input = new Input();
+            input.getElement().setAttribute("value", String.valueOf(cell.getValue()));
+            input.getElement().getStyle().set("width", "100%");
+            input.getElement().setAttribute("data-cell-id", cell.getCellId());
+
+            td.appendChild(input.getElement());
+            tr.appendChild(td);
+        }
+    }
+
+    // Adds the row number (1-based index) to the beginning of the row
+    private void addRowNumbersAsFirstColumn(int rowIndex, Element tr) {
+        Element rowNumberCell = new Element("th");
+        rowNumberCell.setText(String.valueOf(rowIndex + 1));
+        rowNumberCell.getStyle()
+                .set("border", "1px solid #ccc")
+                .set("padding", "5px")
+                .set("text-align", "center");
+        tr.appendChild(rowNumberCell);
     }
 
     private List<SpreadsheetRow> getRows(String spreadsheetName) {

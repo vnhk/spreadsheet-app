@@ -1,17 +1,12 @@
 package com.bervan.spreadsheet.functions;
 
-import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 
-import java.util.Optional;
-
 public class CellReferenceArgument implements FunctionArgument {
-    private final String cellId;
-    private final Spreadsheet spreadsheet;
+    private final SpreadsheetCell cell;
 
-    public CellReferenceArgument(String cellId, Spreadsheet spreadsheet) {
-        this.cellId = cellId;
-        this.spreadsheet = spreadsheet;
+    public CellReferenceArgument(SpreadsheetCell cell) {
+        this.cell = cell;
     }
 
     @Override
@@ -22,15 +17,11 @@ public class CellReferenceArgument implements FunctionArgument {
 
     @Override
     public String asText() {
-        return getCell().getValue().toString();
+        return asObject().toString();
     }
 
-    private SpreadsheetCell getCell() {
-        Optional<SpreadsheetCell> cell = spreadsheet.getCell(cellId);
-        if (cell.isEmpty()) {
-            throw new RuntimeException("Cell not found in spreadsheet!");
-        }
-        return cell.get();
+    @Override
+    public Object asObject() {
+        return cell.getValue();
     }
-
 }

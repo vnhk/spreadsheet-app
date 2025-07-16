@@ -2,13 +2,16 @@ package com.bervan.spreadsheet.functions;
 
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @Component
 public class FunctionRegistry {
-    private final Map<String, SpreadsheetFunction> functionMap = new HashMap<>();
+    private final Map<String, SpreadsheetFunction> functionMap;
+
+    public FunctionRegistry(Map<String, SpreadsheetFunction> functionMap) {
+        this.functionMap = functionMap;
+    }
 
     public void register(SpreadsheetFunction function) {
         functionMap.put(function.getName().toUpperCase(), function);

@@ -11,6 +11,7 @@ public class SpreadsheetCell {
     private final int rowIndex;
     private final int columnIndex;
     private Object value;
+    private String formula;
     private CellType cellType;
 
     public SpreadsheetCell(int rowIndex, int columnIndex, Object value) {
@@ -23,6 +24,10 @@ public class SpreadsheetCell {
     private void setValueRelatedFields(Object value) {
         this.value = value;
         this.cellType = detectCellType(value);
+
+        if (cellType == CellType.FORMULA) {
+            formula = value.toString();
+        }
     }
 
     private CellType detectCellType(Object value) {
@@ -47,8 +52,12 @@ public class SpreadsheetCell {
         }
     }
 
-    public void setValue(String value) {
+    public void setValue(Object value) {
         setValueRelatedFields(value);
+    }
+
+    public boolean hasFormula() {
+        return formula != null && !formula.isEmpty() && cellType == CellType.FORMULA;
     }
 
     public enum CellType {
