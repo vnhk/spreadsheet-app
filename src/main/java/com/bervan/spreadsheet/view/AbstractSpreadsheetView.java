@@ -63,13 +63,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         emptyHeader.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
         headerRow.appendChild(emptyHeader);
 
-        // Assume all rows have the same number of columns
         if (!rows.isEmpty()) {
             int columnCount = rows.get(0).cells.size();
             for (int i = 0; i < columnCount; i++) {
                 Element th = new Element("th");
                 th.setText(Character.toString((char) ('A' + i))); // A, B, C, ...
-                th.getStyle().set("border", "1px solid #ccc")
+                th.getStyle().set("border", "1px solid white")
                         .set("padding", "5px")
                         .set("text-align", "center");
                 headerRow.appendChild(th);
