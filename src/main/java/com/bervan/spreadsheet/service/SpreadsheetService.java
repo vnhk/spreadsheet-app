@@ -54,4 +54,16 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
             }
         }
     }
+
+    public static SpreadsheetCell findCellById(List<SpreadsheetRow> rows, String cellId) {
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.getCellId().equals(cellId)) {
+                    return cell;
+                }
+            }
+        }
+
+        return null;
+    }
 }

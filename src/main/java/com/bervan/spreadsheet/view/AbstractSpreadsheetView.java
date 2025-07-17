@@ -4,6 +4,7 @@ import com.bervan.common.AbstractPageView;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
+import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Input;
@@ -22,6 +23,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private static final int MAX_RECURSION_DEPTH = 100;
     private final SpreadsheetService spreadsheetService;
+    private List<SpreadsheetRow> rows;
 
 
     public AbstractSpreadsheetView(SpreadsheetService service) {
@@ -36,12 +38,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void init(String spreadsheetName) {
         // Load spreadsheet rows from service
-        List<SpreadsheetRow> rows = getRows(spreadsheetName);
+        rows = getRows(spreadsheetName);
         spreadsheetService.evaluateAllFormulas(rows);
         // Create editable HTML table
-        Div div = createHTMLTable(rows);
-
-        add(div);
+        refreshView(rows);
     }
 
     private Div createHTMLTable(List<SpreadsheetRow> rows) {
@@ -53,7 +53,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         // Top-left corner cell (empty, for alignment with row numbers)
         Element emptyHeader = new Element("th");
-        emptyHeader.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
+        emptyHeader.getStyle().set("border", "1px solid white").set("padding", "5px");
         headerRow.appendChild(emptyHeader);
 
         if (!rows.isEmpty()) {
@@ -87,7 +87,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             Element th = new Element("th");
             th.setText(Character.toString((char) ('A' + i))); // Convert 0 → 'A', 1 → 'B', etc.
             th.getStyle()
-                    .set("border", "1px solid white")
+                    .set("border", "1px solid #ccc")
+                    .set("color", "white")
                     .set("padding", "5px")
                     .set("text-align", "center");
             headerRow.appendChild(th);
@@ -96,19 +97,61 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     // Adds editable input cells to a given table row
     private void addEditableInputCells(SpreadsheetRow row, Element tr) {
-        for (SpreadsheetCell cell : row.cells) {
+        for (SpreadsheetCell cell : row.getCells()) {
             Element td = new Element("td");
             td.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
 
-            // Editable input for cell value
             Input input = new Input();
-            input.getElement().setAttribute("value", String.valueOf(cell.getValue()));
             input.getElement().getStyle().set("width", "100%");
+
+            if (cell.hasFormula()) {
+                // Different text color for formula cells
+                input.getElement().getStyle().set("color", "blue");
+            }
+
+            input.getElement().executeJs(
+                    """
+                            const input = this;
+                            input.addEventListener('focus', function(e) {
+                                if (input.dataset.formula) {
+                                    input.value = input.dataset.formula; // Show formula on focus
+                                }
+                            });
+                            
+                            input.addEventListener('blur', function(e) {
+                                const newValue = input.value;
+                                if (newValue !== input.dataset.formula && newValue !== input.dataset.value) {
+                                   $0.$server.onCellEdit(input.dataset.cellId, newValue);
+                                } else {
+                                    input.value = input.dataset.value; // Revert to value if nothing changed
+                                }
+                            });
+                            """, getElement());
+
+            input.getElement().setAttribute("value", String.valueOf(cell.getValue()));
+            input.getElement().setAttribute("data-formula", cell.getFormula() != null ? cell.getFormula() : "");
+            input.getElement().setAttribute("data-value", String.valueOf(cell.getValue()));
             input.getElement().setAttribute("data-cell-id", cell.getCellId());
 
             td.appendChild(input.getElement());
             tr.appendChild(td);
         }
+    }
+
+    @ClientCallable
+    public void onCellEdit(String cellId, String value) {
+        SpreadsheetCell cell = SpreadsheetService.findCellById(rows, cellId);
+        if (cell != null) {
+            cell.setValue(value);
+            spreadsheetService.evaluateAllFormulas(rows);
+            refreshView(rows);
+        }
+    }
+
+    private void refreshView(List<SpreadsheetRow> rows) {
+        removeAll();
+        Div div = createHTMLTable(rows);
+        add(div);
     }
 
     // Adds the row number (1-based index) to the beginning of the row
@@ -117,6 +160,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         rowNumberCell.setText(String.valueOf(rowIndex + 1));
         rowNumberCell.getStyle()
                 .set("border", "1px solid #ccc")
+                .set("color", "white")
                 .set("padding", "5px")
                 .set("text-align", "center");
         tr.appendChild(rowNumberCell);
@@ -125,22 +169,22 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private List<SpreadsheetRow> getRows(String spreadsheetName) {
         List<SpreadsheetRow> rows = new ArrayList<>();
 
-        for (int rowIndex = 0; rowIndex < 5; rowIndex++) {
+        for (int rowIndex = 1; rowIndex <= 5; rowIndex++) {
             SpreadsheetRow row = new SpreadsheetRow();
             row.rowNumber = rowIndex;
 
-            for (int colIndex = 0; colIndex < 5; colIndex++) {
+            for (int colIndex = 1; colIndex <= 5; colIndex++) {
                 Object value;
 
                 // Sample formulas and values
-                if (rowIndex == 0 && colIndex == 0) {
+                if (rowIndex == 1 && colIndex == 1) {
                     value = "=+(1, 2)";
-                } else if (rowIndex == 1 && colIndex == 1) {
-                    value = "=+(A0, 3)";
                 } else if (rowIndex == 2 && colIndex == 2) {
-                    value = 42;
+                    value = "=+(A1, 3)";
                 } else if (rowIndex == 3 && colIndex == 3) {
-                    value = "=+(A0, B1)";
+                    value = 42;
+                } else if (rowIndex == 4 && colIndex == 4) {
+                    value = "=+(A1, B2)";
                 } else {
                     value = "Test " + rowIndex + colIndex;
                 }

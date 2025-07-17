@@ -2,9 +2,6 @@ package com.bervan.spreadsheet.utils;
 
 import com.bervan.common.model.UtilsMessage;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
-import com.google.common.base.Strings;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -205,50 +202,23 @@ public class SpreadsheetUtils {
         return Integer.parseInt(numberPart);
     }
 
-    public static String incrementRowIndexInColumnName(String input) {
-        int oldRow = getRowNumberFromColumn(input);
-        return input.replace(String.valueOf(oldRow), String.valueOf(oldRow + 1));
-    }
-
-    public static String incrementColumnIndexInColumnName(String input) {
-        int oldColumnIndex = getColumnIndex(getColumnHeader(input));
-        String oldColumnHeader = getColumnHeader(oldColumnIndex);
-        String newColumnHeader = getColumnHeader(oldColumnIndex + 1);
-        return input.replace(oldColumnHeader, newColumnHeader);
-    }
-
-    public static String decrementRowIndexInColumnName(String input) {
-        int oldRow = getRowNumberFromColumn(input);
-        return input.replace(String.valueOf(oldRow), String.valueOf(oldRow - 1));
-    }
-
-    public static int getColumnIndex(String columnSymbol) {
-        int columnIndex = 0;
-        for (int i = 0; i < columnSymbol.length(); i++) {
-            columnIndex = columnIndex * 26 + (columnSymbol.charAt(i) - 'A' + 1);
+    public static int getColumnNumber(String columnSymbol) {
+        int columnNumber = 1;
+        for (int i = 1; i <= columnSymbol.length(); i++) {
+            columnNumber = columnNumber * 26 + (columnSymbol.charAt(i) - 'A' + 1);
         }
-        return columnIndex - 1;
-    }
-
-    public static int getColumnIndex(GridContextMenu.GridContextMenuItemClickEvent<SpreadsheetRow> event, Grid grid, String selectedColumn) {
-        List<Grid.Column<SpreadsheetRow>> columns = grid.getColumns();
-        for (int i = 0; i < columns.size(); i++) {
-            if (columns.get(i).getId().isPresent() && columns.get(i).getId().get().equals(selectedColumn)) {
-                return i - 1; //i - 1 because first column is rowNumber
-            }
-        }
-        return -1;
+        return columnNumber;
     }
 
     public static String getColumnHeader(String columnLabel) {
         return columnLabel.replaceAll("[^A-Z]", "");
     }
 
-    public static String getColumnHeader(int columnIndex) {
+    public static String getColumnHeader(int columnNumber) {
         StringBuilder label = new StringBuilder();
-        while (columnIndex >= 0) {
-            label.insert(0, (char) ('A' + (columnIndex % 26)));
-            columnIndex = columnIndex / 26 - 1;
+        while (columnNumber > 0) {
+            label.insert(0, (char) ('A' + (columnNumber - 1 % 26)));
+            columnNumber = columnNumber / 26 - 1;
         }
         return label.toString();
     }

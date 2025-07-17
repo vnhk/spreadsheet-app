@@ -8,17 +8,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SpreadsheetCell {
     private final String cellId;
-    private final int rowIndex;
-    private final int columnIndex;
+    private final int rowNumber;
+    private final int columnNumber;
     private Object value;
     private String formula;
     private CellType cellType;
 
-    public SpreadsheetCell(int rowIndex, int columnIndex, Object value) {
-        this.rowIndex = rowIndex;
-        this.columnIndex = columnIndex;
+    public SpreadsheetCell(int rowNumber, int columnNumber, Object value) {
+        if (rowNumber == 0) {
+            throw new IllegalArgumentException("Row index cannot be equal to 0");
+        }
+        if (columnNumber == 0) {
+            throw new IllegalArgumentException("Column number cannot be equal to 0");
+        }
+        this.rowNumber = rowNumber;
+        this.columnNumber = columnNumber;
         setValueRelatedFields(value);
-        this.cellId = SpreadsheetUtils.getColumnHeader(columnIndex) + rowIndex;
+        this.cellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
     }
 
     private void setValueRelatedFields(Object value) {
