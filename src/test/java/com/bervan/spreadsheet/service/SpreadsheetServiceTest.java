@@ -91,14 +91,14 @@ class SpreadsheetServiceTest {
         // D4 = =+(1, 2) → 3
         assertEquals(3.0, rows1SimpleFunction.get(3).getCell(3).getValue());
 
-        // C3 = =+(A1, 3) → 3 + 3 = 6
-        assertEquals(6.0, rows1SimpleFunction.get(2).getCell(2).getValue());
+        // C3 = =+(A1, 3) → 45 + 3 = 48
+        assertEquals(48.0, rows1SimpleFunction.get(2).getCell(2).getValue());
 
         // B2 = 42 → should stay 42
         assertEquals(42, rows1SimpleFunction.get(1).getCell(1).getValue());
 
-        // A1 = =+(A1, B2) → 3 + 6 = 9
-        assertEquals(9.0, rows1SimpleFunction.get(0).getCell(0).getValue());
+        // A1 = =+(D4, B2) → 3 + 42 = 45
+        assertEquals(45.0, rows1SimpleFunction.get(0).getCell(0).getValue());
 
         // Other text values
         assertEquals("Test 12", rows1SimpleFunction.get(0).getCell(1).getValue());
@@ -116,18 +116,18 @@ class SpreadsheetServiceTest {
                 Object value;
 
                 // Reversed formulas and values:
-                // D4 = =+(1, 2) → 3
-                // C3 = =+(A1, 3) → 3 + 3 = 6
-                // B2 = 42 → should stay 42
-                // A1 = =+(A1, B2) → 3 + 6 = 9
                 if (rowIndex == 4 && colIndex == 4) {
-                    value = "=+(1, 2)";
+                    value = "=+(1,2)";
+                    // D4 = =+(1, 2) → 3
                 } else if (rowIndex == 3 && colIndex == 3) {
-                    value = "=+(A1, 3)";
+                    value = "=+(A1,3)";
+                    // C3 = =+(A1, 3) → 45 + 3 = 48
                 } else if (rowIndex == 2 && colIndex == 2) {
                     value = 42;
+                    // B2 = 42 → should stay 42
                 } else if (rowIndex == 1 && colIndex == 1) {
-                    value = "=+(A1, B2)";
+                    value = "=+(D4,B2)";
+                    // A1 = =+(D4, B2) → 3 + 42 = 45
                 } else {
                     value = "Test " + rowIndex + colIndex;
                 }

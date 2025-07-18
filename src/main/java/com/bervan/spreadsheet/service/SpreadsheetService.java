@@ -23,6 +23,18 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         this.formulaParser = formulaParser;
     }
 
+    public static SpreadsheetCell findCellById(List<SpreadsheetRow> rows, String cellId) {
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.getCellId().equals(cellId)) {
+                    return cell;
+                }
+            }
+        }
+
+        return null;
+    }
+
     @Override
     public void save(List<Spreadsheet> data) {
         throw new RuntimeException("Not supported");
@@ -40,30 +52,38 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
     }
 
     public void evaluateAllFormulas(List<SpreadsheetRow> rows) {
-        for (SpreadsheetRow row : rows) {
-            for (SpreadsheetCell cell : row.getCells()) {
-                if (cell.hasFormula()) {
-                    try {
-                        FunctionArgument result = formulaParser.evaluate(cell.getFormula(), rows);
-                        cell.setValue(result.asObject());
-                    } catch (Exception e) {
-                        log.warn("Failed to evaluate formula {} in cell {}: {}", cell.getFormula(), cell.getCellId(), e.getMessage());
-                        cell.setValue("#ERR");
+        int maxIterations = 100; // Avoid infinite loops in case of circular dependencies
+
+        for (int iteration = 0; iteration < maxIterations; iteration++) {
+            boolean anyChanged = false;
+
+            for (SpreadsheetRow row : rows) {
+                for (SpreadsheetCell cell : row.getCells()) {
+                    if (cell.hasFormula()) {
+                        Object currentValue = cell.getValue();
+                        try {
+                            FunctionArgument result = formulaParser.evaluate(cell.getFormula(), rows);
+                            Object newValue = result.asObject();
+
+                            // Only mark changed if value has actually changed
+                            if (!newValue.equals(currentValue)) {
+                                cell.setValue(newValue);
+                                anyChanged = true;
+                            }
+                        } catch (Exception e) {
+                            // Only log error in final iteration
+                            if (iteration == maxIterations - 1) {
+                                log.warn("Failed to evaluate formula {} in cell {}: {}", cell.getFormula(), cell.getCellId(), e.getMessage());
+                                cell.setValue("#ERR");
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
 
-    public static SpreadsheetCell findCellById(List<SpreadsheetRow> rows, String cellId) {
-        for (SpreadsheetRow row : rows) {
-            for (SpreadsheetCell cell : row.getCells()) {
-                if (cell.getCellId().equals(cellId)) {
-                    return cell;
-                }
+            if (!anyChanged) {
+                break; // No changes, we can stop
             }
         }
-
-        return null;
     }
 }
