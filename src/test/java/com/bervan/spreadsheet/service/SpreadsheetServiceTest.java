@@ -50,39 +50,6 @@ class SpreadsheetServiceTest {
         assertEquals("Test 25", rows1SimpleFunction.get(1).getCell(4).getValue());
     }
 
-    private List<SpreadsheetRow> getRows_1_simple_function() {
-        List<SpreadsheetRow> rows = new ArrayList<>();
-
-        for (int rowIndex = 1; rowIndex <= 5; rowIndex++) {
-            SpreadsheetRow row = new SpreadsheetRow();
-            row.rowNumber = rowIndex;
-
-            for (int colIndex = 1; colIndex <= 5; colIndex++) {
-                Object value;
-
-                // Sample formulas and values
-                if (rowIndex == 1 && colIndex == 1) {
-                    value = "=+(1, 2)";
-                } else if (rowIndex == 2 && colIndex == 2) {
-                    value = "=+(A1, 3)";
-                } else if (rowIndex == 3 && colIndex == 3) {
-                    value = 42;
-                } else if (rowIndex == 4 && colIndex == 4) {
-                    value = "=+(A1, B2)";
-                } else {
-                    value = "Test " + rowIndex + colIndex;
-                }
-
-                SpreadsheetCell cell = new SpreadsheetCell(rowIndex, colIndex, value);
-                row.cells.add(cell);
-            }
-
-            rows.add(row);
-        }
-
-        return rows;
-    }
-
     @Test
     void evaluateAllFormulas_reversed() {
         List<SpreadsheetRow> rows1SimpleFunction = getRows_1_simple_reversed_function();
@@ -103,6 +70,90 @@ class SpreadsheetServiceTest {
         // Other text values
         assertEquals("Test 12", rows1SimpleFunction.get(0).getCell(1).getValue());
         assertEquals("Test 25", rows1SimpleFunction.get(1).getCell(4).getValue());
+    }
+
+    @Test
+    void evaluateLargeGridPerformance() {
+        int rowsCount, colsCount = 27;
+        rowsCount = colsCount;
+        List<SpreadsheetRow> rows = new ArrayList<>();
+
+        // Step 1: Generate grid
+        for (int rowIndex = 1; rowIndex <= rowsCount; rowIndex++) {
+            SpreadsheetRow row = new SpreadsheetRow();
+            row.rowNumber = rowIndex;
+
+            for (int colIndex = 1; colIndex <= colsCount; colIndex++) {
+                Object value;
+                // A1 = 1, B1 = =+(A1, 1), C1 = =+(B1, 1), ...
+                if (rowIndex == 1 && colIndex == 1) {
+                    value = 1; // Starting value in A1
+                } else {
+                    String prevCol = getExcelColumnLetter(colIndex - 2);
+                    value = "=+(" + prevCol + "1, 1)";
+                }
+
+                SpreadsheetCell cell = new SpreadsheetCell(rowIndex, colIndex, value);
+                row.cells.add(cell);
+            }
+
+            rows.add(row);
+        }
+
+        // Step 2: Measure time
+        long start = System.currentTimeMillis();
+
+        spreadsheetService.evaluateAllFormulas(rows);
+
+        long end = System.currentTimeMillis();
+        double seconds = (end - start) / 1000.0;
+        System.out.println("Execution time: " + seconds + " s");
+
+        // Step 3: Verify the last formula (Z1 = 1 + 1 + ... + 1 = 100)
+        SpreadsheetCell lastCell = rows.get(0).getCell(colsCount - 1);
+        assertEquals(rowsCount, Double.valueOf(lastCell.getValue().toString()).intValue());
+    }
+
+    @Test
+    void evaluateLargeGridPerformanceReversed() {
+        int rowsCount, colsCount = 26;
+        rowsCount = colsCount;
+        List<SpreadsheetRow> rows = new ArrayList<>();
+
+        // Step 1: Generate grid (from right to left)
+        for (int rowIndex = 1; rowIndex <= rowsCount; rowIndex++) {
+            SpreadsheetRow row = new SpreadsheetRow();
+            row.rowNumber = rowIndex;
+
+            for (int colIndex = colsCount; colIndex >= 1; colIndex--) {
+                Object value;
+                // Z1 = 1, Y1 = =+(Z1, 1), X1 = =+(Y1, 1), ...
+                if (rowIndex == 1 && colIndex == colsCount) {
+                    value = 1; // Starting value in the last column
+                } else {
+                    String nextCol = getExcelColumnLetter(colIndex); // colIndex+1 - 1 = colIndex
+                    value = "=+(" + nextCol + "1, 1)";
+                }
+
+                SpreadsheetCell cell = new SpreadsheetCell(rowIndex, colIndex, value);
+                row.cells.add(cell);
+            }
+
+            rows.add(row);
+        }
+
+        // Step 2: Measure time
+        long start = System.currentTimeMillis();
+
+        spreadsheetService.evaluateAllFormulas(rows);
+
+        long end = System.currentTimeMillis();
+        double seconds = (end - start) / 1000.0;
+        System.out.println("Execution time (reversed): " + seconds + " s");
+
+        // Step 3: Verify the first formula (A1 = 1 + 1 + ... + 1 = )
+        SpreadsheetCell firstCell = SpreadsheetService.findCellById(rows, "A1"); // A1
+        assertEquals(rowsCount, Double.valueOf(firstCell.getValue().toString()).intValue());
     }
 
     private List<SpreadsheetRow> getRows_1_simple_reversed_function() {
@@ -140,6 +191,48 @@ class SpreadsheetServiceTest {
         }
 
         return rows;
+    }
+
+    private List<SpreadsheetRow> getRows_1_simple_function() {
+        List<SpreadsheetRow> rows = new ArrayList<>();
+
+        for (int rowIndex = 1; rowIndex <= 5; rowIndex++) {
+            SpreadsheetRow row = new SpreadsheetRow();
+            row.rowNumber = rowIndex;
+
+            for (int colIndex = 1; colIndex <= 5; colIndex++) {
+                Object value;
+
+                // Sample formulas and values
+                if (rowIndex == 1 && colIndex == 1) {
+                    value = "=+(1, 2)";
+                } else if (rowIndex == 2 && colIndex == 2) {
+                    value = "=+(A1, 3)";
+                } else if (rowIndex == 3 && colIndex == 3) {
+                    value = 42;
+                } else if (rowIndex == 4 && colIndex == 4) {
+                    value = "=+(A1, B2)";
+                } else {
+                    value = "Test " + rowIndex + colIndex;
+                }
+
+                SpreadsheetCell cell = new SpreadsheetCell(rowIndex, colIndex, value);
+                row.cells.add(cell);
+            }
+
+            rows.add(row);
+        }
+
+        return rows;
+    }
+
+    private String getExcelColumnLetter(int columnIndex) {
+        StringBuilder column = new StringBuilder();
+        while (columnIndex >= 0) {
+            column.insert(0, (char) ('A' + (columnIndex % 26)));
+            columnIndex = columnIndex / 26 - 1;
+        }
+        return column.toString();
     }
 
 }
