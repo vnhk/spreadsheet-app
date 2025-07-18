@@ -52,7 +52,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
     }
 
     public void evaluateAllFormulas(List<SpreadsheetRow> rows) {
-        int maxIterations = 100; // Avoid infinite loops in case of circular dependencies
+        int maxIterations = 10000; // Avoid infinite loops in case of circular dependencies
 
         for (int iteration = 0; iteration < maxIterations; iteration++) {
             boolean anyChanged = false;

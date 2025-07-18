@@ -7,6 +7,7 @@ import com.bervan.spreadsheet.functions.FunctionRegistry;
 import com.bervan.spreadsheet.functions.SumFunction;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
+import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
@@ -154,6 +155,58 @@ class SpreadsheetServiceTest {
         // Step 3: Verify the first formula (A1 = 1 + 1 + ... + 1 = )
         SpreadsheetCell firstCell = SpreadsheetService.findCellById(rows, "A1"); // A1
         assertEquals(rowsCount, Double.valueOf(firstCell.getValue().toString()).intValue());
+    }
+
+    @Test
+    void evaluateFullGridChainedDownward() {
+        int rowsCount = 20;
+        int colsCount = 20;
+        List<SpreadsheetRow> rows = new ArrayList<>();
+
+        // Step 1: Generate grid with chained formulas
+        for (int rowIndex = 1; rowIndex <= rowsCount; rowIndex++) {
+            SpreadsheetRow row = new SpreadsheetRow();
+            row.rowNumber = rowIndex;
+
+            for (int colIndex = 1; colIndex <= colsCount; colIndex++) {
+                Object value;
+
+                // If this is the last cell (Z26), set it to 1 (base case)
+                if (rowIndex == rowsCount && colIndex == colsCount) {
+                    value = 1;
+                } else {
+                    // Calculate next cell in the chain
+                    int nextRow = rowIndex;
+                    int nextCol = colIndex + 1;
+
+                    // If we're at the last column, jump to the first column of the next row
+                    if (nextCol > colsCount) {
+                        nextRow = nextRow + 1;
+                        nextCol = 1;
+                    }
+
+                    String ref = SpreadsheetUtils.getColumnHeader(nextCol) + nextRow;
+                    value = "=+(" + ref + ",1)";
+                }
+
+                SpreadsheetCell cell = new SpreadsheetCell(rowIndex, colIndex, value);
+                row.cells.add(cell);
+            }
+
+            rows.add(row);
+        }
+
+        // Step 2: Measure evaluation time
+        long start = System.currentTimeMillis();
+        spreadsheetService.evaluateAllFormulas(rows);
+        long end = System.currentTimeMillis();
+
+        double seconds = (end - start) / 1000.0;
+        System.out.println("Execution time (full grid chained): " + seconds + " s");
+
+        // Step 3: Verify the top-left cell contains the sum of all cells
+        SpreadsheetCell a1 = SpreadsheetService.findCellById(rows, "A1");
+        assertEquals(rowsCount * colsCount, Double.valueOf(a1.getValue().toString()).intValue());
     }
 
     private List<SpreadsheetRow> getRows_1_simple_reversed_function() {
