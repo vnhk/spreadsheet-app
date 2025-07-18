@@ -1,7 +1,7 @@
 package com.bervan.spreadsheet.utils;
 
 import com.bervan.common.model.UtilsMessage;
-import com.bervan.spreadsheet.model.Cell;
+import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -140,58 +140,58 @@ class SpreadsheetUtilsTest {
     }
 
     private List<SpreadsheetRow> initializeTestCells() {
-        Cell[][] cells = new Cell[14][3];
+        SpreadsheetCell[][] cells = new SpreadsheetCell[14][3];
 
-        cells[0][0] = new Cell("Expense:", 0, 0);
-        cells[0][1] = new Cell("Cost:", 1, 0);
-        cells[0][2] = new Cell("Index:", 2, 0);
+        cells[0][0] = new SpreadsheetCell("Expense:", 0, 0);
+        cells[0][1] = new SpreadsheetCell("Cost:", 1, 0);
+        cells[0][2] = new SpreadsheetCell("Index:", 2, 0);
 
-        cells[1][0] = new Cell("Household Shopping", 0, 1);
-        cells[1][1] = new Cell("2000", 1, 1);
+        cells[1][0] = new SpreadsheetCell("Household Shopping", 0, 1);
+        cells[1][1] = new SpreadsheetCell("2000", 1, 1);
 
-        cells[2][0] = new Cell("Credit", 0, 2);
-        cells[2][1] = new Cell("1700", 1, 2);
+        cells[2][0] = new SpreadsheetCell("Credit", 0, 2);
+        cells[2][1] = new SpreadsheetCell("1700", 1, 2);
 
-        cells[3][0] = new Cell("G-Bills", 0, 3);
-        cells[3][1] = new Cell("630", 1, 3);
+        cells[3][0] = new SpreadsheetCell("G-Bills", 0, 3);
+        cells[3][1] = new SpreadsheetCell("630", 1, 3);
 
-        cells[4][0] = new Cell("Food Ordering", 0, 4);
-        cells[4][1] = new Cell("600", 1, 4);
+        cells[4][0] = new SpreadsheetCell("Food Ordering", 0, 4);
+        cells[4][1] = new SpreadsheetCell("600", 1, 4);
 
-        cells[5][0] = new Cell("Bonds", 0, 5);
-        cells[5][1] = new Cell("0", 1, 5);
+        cells[5][0] = new SpreadsheetCell("Bonds", 0, 5);
+        cells[5][1] = new SpreadsheetCell("0", 1, 5);
 
-        cells[6][0] = new Cell("Investing", 0, 6);
-        cells[6][1] = new Cell("0", 1, 6);
+        cells[6][0] = new SpreadsheetCell("Investing", 0, 6);
+        cells[6][1] = new SpreadsheetCell("0", 1, 6);
 
-        cells[7][0] = new Cell("Fuel", 0, 7);
-        cells[7][1] = new Cell("500", 1, 7);
+        cells[7][0] = new SpreadsheetCell("Fuel", 0, 7);
+        cells[7][1] = new SpreadsheetCell("500", 1, 7);
 
-        cells[8][0] = new Cell("English", 0, 8);
-        cells[8][1] = new Cell("400", 1, 8);
+        cells[8][0] = new SpreadsheetCell("English", 0, 8);
+        cells[8][1] = new SpreadsheetCell("400", 1, 8);
 
-        cells[9][0] = new Cell("Electricity", 0, 9);
-        cells[9][1] = new Cell("180", 1, 9);
+        cells[9][0] = new SpreadsheetCell("Electricity", 0, 9);
+        cells[9][1] = new SpreadsheetCell("180", 1, 9);
 
-        cells[10][0] = new Cell("GPT", 0, 10);
-        cells[10][1] = new Cell("100", 1, 10);
+        cells[10][0] = new SpreadsheetCell("GPT", 0, 10);
+        cells[10][1] = new SpreadsheetCell("100", 1, 10);
 
-        cells[11][0] = new Cell("Netflix", 0, 11);
-        cells[11][1] = new Cell("90", 1, 11);
+        cells[11][0] = new SpreadsheetCell("Netflix", 0, 11);
+        cells[11][1] = new SpreadsheetCell("90", 1, 11);
 
-        cells[12][0] = new Cell("Internet", 0, 12);
-        cells[12][1] = new Cell("80", 1, 12);
+        cells[12][0] = new SpreadsheetCell("Internet", 0, 12);
+        cells[12][1] = new SpreadsheetCell("80", 1, 12);
 
-        cells[13][0] = new Cell("English", 0, 13);
-        cells[13][1] = new Cell("400", 1, 13);
+        cells[13][0] = new SpreadsheetCell("English", 0, 13);
+        cells[13][1] = new SpreadsheetCell("400", 1, 13);
 
         for (int i = 0; i < cells.length; i++) {
-            cells[i][2] = new Cell(String.valueOf(i + 1), 2, i);
+            cells[i][2] = new SpreadsheetCell(String.valueOf(i + 1), 2, i);
         }
 
         List<SpreadsheetRow> result = new ArrayList<>();
 
-        for (Cell[] rowCells : cells) {
+        for (SpreadsheetCell[] rowCells : cells) {
             SpreadsheetRow row = new SpreadsheetRow();
             row.setCells(Arrays.stream(rowCells).toList());
             result.add(row);

@@ -27,6 +27,10 @@ public class SpreadsheetCell {
         this.cellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
     }
 
+    public SpreadsheetCell(Object value, int columnNumber, int rowNumber) {
+        this(rowNumber, columnNumber, value);
+    }
+
     private void setValueRelatedFields(Object value) {
         this.value = value;
         this.cellType = detectCellType(value);
