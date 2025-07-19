@@ -5,6 +5,7 @@ import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.vaadin.flow.component.ClientCallable;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Input;
@@ -19,9 +20,9 @@ import java.util.UUID;
 
 @Slf4j
 @JsModule("./spreadsheet-context-menu.js")
+@CssImport("./spreadsheet.css")
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
-    private static final int MAX_RECURSION_DEPTH = 100;
     private final SpreadsheetService spreadsheetService;
     private List<SpreadsheetRow> rows;
 
@@ -46,7 +47,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private Div createHTMLTable(List<SpreadsheetRow> rows) {
         Element table = new Element("table");
-        table.getStyle().set("border-collapse", "collapse").set("width", "100%");
+        table.setAttribute("class", "spreadsheet-table");
 
         // Create the first row with column headers
         Element headerRow = new Element("tr");
