@@ -5,10 +5,13 @@ import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.vaadin.flow.component.ClientCallable;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Input;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
@@ -139,6 +142,38 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         }
     }
 
+    private VerticalLayout createSpreadsheetLayout(List<SpreadsheetRow> rows) {
+        VerticalLayout layout = new VerticalLayout();
+        layout.setPadding(true);
+        layout.setSpacing(true);
+
+        // Toolbar
+        HorizontalLayout actionPanel = new HorizontalLayout();
+        actionPanel.addClassName("spreadsheet-action-panel");
+
+        Button addRowBtn = new Button("Add Row", event -> {
+            // TODO: add row logic
+        });
+        addRowBtn.addClassName("spreadsheet-action-button");
+
+        Button addColumnBtn = new Button("Add Column", event -> {
+            // TODO: add column logic
+        });
+        addColumnBtn.addClassName("spreadsheet-action-button");
+
+        Button exportBtn = new Button("Export Data", event -> {
+            // TODO: export logic
+        });
+        exportBtn.addClassName("spreadsheet-action-button");
+
+        actionPanel.add(addRowBtn, addColumnBtn, exportBtn);
+
+        Div tableDiv = createHTMLTable(rows);
+
+        layout.add(actionPanel, tableDiv);
+        return layout;
+    }
+
     @ClientCallable
     public void onCellEdit(String cellId, String value) {
         SpreadsheetCell cell = SpreadsheetService.findCellById(rows, cellId);
@@ -151,8 +186,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void refreshView(List<SpreadsheetRow> rows) {
         removeAll();
-        Div div = createHTMLTable(rows);
-        add(div);
+        VerticalLayout spreadsheetLayout = createSpreadsheetLayout(rows);
+        add(spreadsheetLayout);
     }
 
     // Adds the row number (1-based index) to the beginning of the row
