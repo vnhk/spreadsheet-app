@@ -67,7 +67,7 @@ public class SpreadsheetCell {
     }
 
     public boolean hasFormula() {
-        return formula != null && !formula.isEmpty() && cellType == CellType.FORMULA;
+        return cellType == CellType.FORMULA && formula != null && !formula.isEmpty();
     }
 
     public enum CellType {

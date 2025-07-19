@@ -10,8 +10,7 @@ import com.bervan.spreadsheet.model.SpreadsheetRow;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -52,30 +51,37 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
     }
 
     public void evaluateAllFormulas(List<SpreadsheetRow> rows) {
+        List<SpreadsheetCell> formulas = rows
+                .stream()
+                .map(SpreadsheetRow::getCells)
+                .flatMap(Collection::parallelStream)
+                .filter(SpreadsheetCell::hasFormula).toList();
+
+        Set<String> correctlyCalculatedFormulas = new HashSet<>();
         int maxIterations = 10000; // Avoid infinite loops in case of circular dependencies
 
         for (int iteration = 0; iteration < maxIterations; iteration++) {
             boolean anyChanged = false;
+            for (SpreadsheetCell cell : formulas) {
 
-            for (SpreadsheetRow row : rows) {
-                for (SpreadsheetCell cell : row.getCells()) {
-                    if (cell.hasFormula()) {
-                        Object currentValue = cell.getValue();
-                        try {
-                            FunctionArgument result = formulaParser.evaluate(cell.getFormula(), rows);
-                            Object newValue = result.asObject();
+                String cellId = cell.getCellId();
+                if (!correctlyCalculatedFormulas.contains(cellId)) {
+                    Object currentValue = cell.getValue();
+                    try {
+                        FunctionArgument result = formulaParser.evaluate(cell.getFormula(), rows);
+                        Object newValue = result.asObject();
 
-                            // Only mark changed if value has actually changed
-                            if (!newValue.equals(currentValue)) {
-                                cell.setValue(newValue);
-                                anyChanged = true;
-                            }
-                        } catch (Exception e) {
-                            // Only log error in final iteration
-                            if (iteration == maxIterations - 1) {
-                                log.warn("Failed to evaluate formula {} in cell {}: {}", cell.getFormula(), cell.getCellId(), e.getMessage());
-                                cell.setValue("#ERR");
-                            }
+                        // Only mark changed if value has actually changed
+                        if (!newValue.equals(currentValue)) {
+                            cell.setValue(newValue);
+                            anyChanged = true;
+                            correctlyCalculatedFormulas.add(cellId);
+                        }
+                    } catch (Exception e) {
+                        // Only log error in final iteration
+                        if (iteration == maxIterations - 1) {
+                            log.warn("Failed to evaluate formula {} in cell {}: {}", cell.getFormula(), cellId, e.getMessage());
+                            cell.setValue("#ERR");
                         }
                     }
                 }

@@ -74,6 +74,21 @@ class SpreadsheetServiceTest {
     }
 
     @Test
+    void evaluateAllFormulas_loop_dependency() {
+        List<SpreadsheetRow> rows = new ArrayList<>();
+        SpreadsheetRow row = new SpreadsheetRow(1);
+        SpreadsheetCell cell1 = new SpreadsheetCell(1, 1, "=+(A2,1)");
+        SpreadsheetCell cell2 = new SpreadsheetCell(1, 2, "=+(A1,1)");
+        row.addCell(cell1, cell2);
+        rows.add(row);
+
+        spreadsheetService.evaluateAllFormulas(rows);
+
+        assertEquals("=+(A2,1)", cell1.getValue());
+        assertEquals("=+(A1,1)", cell2.getValue());
+    }
+
+    @Test
     void evaluateLargeGridPerformance() {
         int rowsCount, colsCount = 27;
         rowsCount = colsCount;
