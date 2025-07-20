@@ -75,7 +75,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
 
                         // Only mark changed if value has actually changed
                         if (!newValue.equals(currentValue)) {
-                            cell.setValue(newValue);
+                            cell.updateValue(newValue);
                             anyChanged = true;
                             correctlyCalculatedFormulas.add(cellId);
                         }
@@ -83,7 +83,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                         // Only log error in final iteration
                         if (iteration == maxIterations - 1) {
                             log.warn("Failed to evaluate formula {} in cell {}: {}", cell.getFormula(), cellId, e.getMessage());
-                            cell.setValue("#ERR");
+                            cell.setNewValueAndCellRelatedFields("#ERR");
                         }
                     }
                 }
@@ -97,6 +97,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
 
     public void addColumnLeft(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber) {
         //just add columnRight on prev column number
+        //not really
         addColumnRight(rows, values, refColumnNumber - 1);
     }
 
@@ -125,7 +126,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                             formula = formula.replaceAll(oldCellId, newCellId);
                         }
                     }
-                    cell.setValue(formula);
+                    cell.setNewValueAndCellRelatedFields(formula);
                 }
             }
         }

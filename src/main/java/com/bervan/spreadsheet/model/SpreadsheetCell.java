@@ -66,8 +66,12 @@ public class SpreadsheetCell {
         }
     }
 
-    public void setValue(Object value) {
+    public void setNewValueAndCellRelatedFields(Object value) {
         setValueRelatedFields(value);
+    }
+
+    public void updateValue(Object value) {
+        this.value = value;
     }
 
     public boolean hasFormula() {

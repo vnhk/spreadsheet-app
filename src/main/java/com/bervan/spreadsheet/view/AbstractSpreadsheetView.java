@@ -39,7 +39,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     public void onCellEdit(String cellId, String value) {
         SpreadsheetCell cell = SpreadsheetService.findCellById(rows, cellId);
         if (cell != null) {
-            cell.setValue(value);
+            cell.setNewValueAndCellRelatedFields(value);
             refreshView(rows);
         }
     }
