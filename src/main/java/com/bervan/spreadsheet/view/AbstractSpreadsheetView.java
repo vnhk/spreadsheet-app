@@ -34,6 +34,37 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         this.spreadsheetService = service;
     }
 
+    @ClientCallable
+    public void onCellEdit(String cellId, String value) {
+        SpreadsheetCell cell = SpreadsheetService.findCellById(rows, cellId);
+        if (cell != null) {
+            cell.setValue(value);
+            spreadsheetService.evaluateAllFormulas(rows);
+            refreshView(rows);
+        }
+    }
+
+    @ClientCallable
+    public void addColumnLeft(Integer columnNumber) {
+        showPrimaryNotification(" addColumnLeft for " + columnNumber);
+    }
+
+    @ClientCallable
+    public void addColumnRight(Integer columnNumber) {
+        showPrimaryNotification(" addColumnRight for " + columnNumber);
+    }
+
+    @ClientCallable
+    public void duplicateColumn(Integer columnNumber) {
+        showPrimaryNotification(" duplicateColumn for " + columnNumber);
+    }
+
+    @ClientCallable
+    public void deleteColumn(Integer columnNumber) {
+        showPrimaryNotification(" deleteColumn for " + columnNumber);
+    }
+
+
     @Override
     public void setParameter(BeforeEvent event, String s) {
         String spreadsheetName = event.getRouteParameters().get("___url_parameter").orElse(UUID.randomUUID().toString());
@@ -89,6 +120,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         int columnCount = rows.get(0).cells.size();
         for (int i = 0; i < columnCount; i++) {
             Element th = new Element("th");
+            th.getClassList().add("spreadsheet-header");
+            th.setAttribute("data-column-number", String.valueOf(i + 1)); //starts with 1
             th.setText(Character.toString((char) ('A' + i))); // Convert 0 → 'A', 1 → 'B', etc.
             th.getStyle()
                     .set("border", "1px solid #ccc")
@@ -103,6 +136,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private void addEditableInputCells(SpreadsheetRow row, Element tr) {
         for (SpreadsheetCell cell : row.getCells()) {
             Element td = new Element("td");
+            td.getClassList().add("spreadsheet-cell");
             td.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
 
             Input input = new Input();
@@ -136,6 +170,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             input.getElement().setAttribute("data-formula", cell.getFormula() != null ? cell.getFormula() : "");
             input.getElement().setAttribute("data-value", String.valueOf(cell.getValue()));
             input.getElement().setAttribute("data-cell-id", cell.getCellId());
+            input.getElement().setAttribute("data-column-number", String.valueOf(cell.getColumnNumber()));
 
             td.appendChild(input.getElement());
             tr.appendChild(td);
@@ -169,19 +204,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         actionPanel.add(addRowBtn, addColumnBtn, exportBtn);
 
         Div tableDiv = createHTMLTable(rows);
+        tableDiv.getElement().executeJs("initContextMenu($0)", getElement());
 
         layout.add(actionPanel, tableDiv);
         return layout;
-    }
-
-    @ClientCallable
-    public void onCellEdit(String cellId, String value) {
-        SpreadsheetCell cell = SpreadsheetService.findCellById(rows, cellId);
-        if (cell != null) {
-            cell.setValue(value);
-            spreadsheetService.evaluateAllFormulas(rows);
-            refreshView(rows);
-        }
     }
 
     private void refreshView(List<SpreadsheetRow> rows) {

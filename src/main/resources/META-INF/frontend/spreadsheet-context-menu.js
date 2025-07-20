@@ -2,7 +2,7 @@ window.initContextMenu = function (serverRef) {
     document.querySelectorAll('.spreadsheet-header').forEach(header => {
         header.addEventListener('contextmenu', function (e) {
             e.preventDefault();
-            const index = header.dataset.columnIndex;
+            const index = header.dataset.columnNumber;
             highlightColumn(index);
             showContextMenu(e.pageX, e.pageY, index);
         });
@@ -12,7 +12,7 @@ window.initContextMenu = function (serverRef) {
         document.querySelectorAll('.spreadsheet-cell').forEach(cell => {
             cell.classList.remove('highlighted-column');
         });
-        document.querySelectorAll(`.spreadsheet-cell[data-column-index='${index}']`)
+        document.querySelectorAll(`.spreadsheet-cell[data-column-number='${index}']`)
             .forEach(cell => cell.classList.add('highlighted-column'));
     }
 
