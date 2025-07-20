@@ -1,8 +1,10 @@
 package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.SpreadsheetCell;
+import lombok.Getter;
 
 public class CellReferenceArgument implements FunctionArgument {
+    @Getter
     private final SpreadsheetCell cell;
 
     public CellReferenceArgument(SpreadsheetCell cell) {

@@ -7,9 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public class SpreadsheetCell {
-    private final String cellId;
-    private final int rowNumber;
-    private final int columnNumber;
+    private String cellId;
+    private int rowNumber;
+    private int columnNumber;
     private Object value;
     private String formula;
     private CellType cellType;
@@ -24,11 +24,15 @@ public class SpreadsheetCell {
         this.rowNumber = rowNumber;
         this.columnNumber = columnNumber;
         setValueRelatedFields(value);
-        this.cellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
+        this.cellId = calcCellId();
     }
 
     public SpreadsheetCell(Object value, int columnNumber, int rowNumber) {
         this(rowNumber, columnNumber, value);
+    }
+
+    private String calcCellId() {
+        return SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
     }
 
     private void setValueRelatedFields(Object value) {
@@ -68,6 +72,11 @@ public class SpreadsheetCell {
 
     public boolean hasFormula() {
         return cellType == CellType.FORMULA && formula != null && !formula.isEmpty();
+    }
+
+    public void updateColumnNumber(int newColumnNumber) {
+        this.columnNumber = newColumnNumber;
+        this.cellId = calcCellId();
     }
 
     public enum CellType {

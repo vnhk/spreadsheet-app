@@ -4,6 +4,7 @@ import com.bervan.common.AbstractPageView;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
+import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -51,7 +52,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     @ClientCallable
     public void addColumnRight(Integer columnNumber) {
-        showPrimaryNotification(" addColumnRight for " + columnNumber);
+        spreadsheetService.addColumnRight(rows, null, columnNumber);
+        refreshView(rows);
+        showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber + 1) + " added!");
     }
 
     @ClientCallable

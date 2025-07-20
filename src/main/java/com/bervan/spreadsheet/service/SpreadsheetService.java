@@ -2,11 +2,13 @@ package com.bervan.spreadsheet.service;
 
 import com.bervan.common.search.SearchService;
 import com.bervan.common.service.BaseService;
+import com.bervan.spreadsheet.functions.CellReferenceArgument;
 import com.bervan.spreadsheet.functions.FormulaParser;
 import com.bervan.spreadsheet.functions.FunctionArgument;
 import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
+import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -89,6 +91,54 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
 
             if (!anyChanged) {
                 break; // No changes, we can stop
+            }
+        }
+    }
+
+    public void addColumnRight(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber) {
+        if (values != null && !values.isEmpty() && values.size() != rows.size()) {
+            throw new IllegalArgumentException("Size of values does not match amount of rows.");
+        }
+        // values can be null or empty and then cells value will be empty
+
+
+        //first update formulas
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.hasFormula()) {
+                    String formula = cell.getFormula();
+                    for (FunctionArgument argument : formulaParser.extractFunctionArguments(formula, rows)) {
+                        if (argument instanceof CellReferenceArgument) {
+                            SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
+                            String oldCellId = cellInFormula.getCellId();
+                            int columnNumber = cellInFormula.getColumnNumber();
+                            int rowNumber = cellInFormula.getRowNumber();
+                            if (columnNumber > refColumnNumber) {
+                                columnNumber++;
+                            }
+                            String newCellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
+                            formula = formula.replaceAll(oldCellId, newCellId);
+                        }
+                    }
+                    cell.setValue(formula);
+                }
+            }
+        }
+
+        //then update columnNumbers
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.getColumnNumber() > refColumnNumber) {
+                    cell.updateColumnNumber(cell.getColumnNumber() + 1);
+                }
+            }
+        }
+
+        for (int i = 0; i < rows.size(); i++) {
+            if (values == null || values.isEmpty()) {
+                rows.get(i).getCells().add(refColumnNumber, new SpreadsheetCell(rows.get(i).rowNumber, refColumnNumber, ""));
+            } else {
+                rows.get(i).getCells().add(refColumnNumber, new SpreadsheetCell(rows.get(i).rowNumber, refColumnNumber, values.get(i)));
             }
         }
     }

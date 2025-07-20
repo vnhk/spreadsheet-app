@@ -24,20 +24,50 @@ public class FormulaParser {
         }
 
         // Remove '=' and extract function name and arguments
-        String content = formula.substring(1).trim(); // e.g. SUM(1, 2)
-        int parenIndex = content.indexOf('(');
-        if (parenIndex == -1 || !content.endsWith(")")) {
-            throw new IllegalArgumentException("Invalid formula syntax: " + formula);
-        }
-
-        String functionName = content.substring(0, parenIndex).trim();
-        String argsString = content.substring(parenIndex + 1, content.length() - 1); // between (...)
+        String content = removeEquals(formula);
+        int parenIndex = getParenIndex(formula, content);
+        String functionName = getFunctionName(content, parenIndex);
+        String argsString = getArgsString(content, parenIndex); // between (...)
 
         List<FunctionArgument> args = parseArguments(argsString, rows);
         SpreadsheetFunction function = functionRegistry.getFunction(functionName)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown function: " + functionName));
 
         return function.calculate(args);
+    }
+
+    public List<FunctionArgument> extractFunctionArguments(String formula, List<SpreadsheetRow> rows) {
+        if (!formula.startsWith("=")) {
+            throw new IllegalArgumentException("Not a formula: " + formula);
+        }
+
+        // Remove '=' and extract function name and arguments
+        String content = removeEquals(formula);
+        int parenIndex = getParenIndex(formula, content);
+        String argsString = getArgsString(content, parenIndex); // between (...)
+
+        return parseArguments(argsString, rows);
+    }
+
+    private int getParenIndex(String formula, String content) {
+        int parenIndex = content.indexOf('(');
+        if (parenIndex == -1 || !content.endsWith(")")) {
+            throw new IllegalArgumentException("Invalid formula syntax: " + formula);
+        }
+        return parenIndex;
+    }
+
+    private String removeEquals(String formula) {
+        // e.g. SUM(1, 2)
+        return formula.substring(1).trim();
+    }
+
+    private String getArgsString(String content, int parenIndex) {
+        return content.substring(parenIndex + 1, content.length() - 1);
+    }
+
+    private String getFunctionName(String content, int parenIndex) {
+        return content.substring(0, parenIndex).trim();
     }
 
     private List<FunctionArgument> parseArguments(String argsString, List<SpreadsheetRow> rows) {
