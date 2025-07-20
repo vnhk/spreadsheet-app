@@ -95,6 +95,11 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         }
     }
 
+    public void addColumnLeft(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber) {
+        //just add columnRight on prev column number
+        addColumnRight(rows, values, refColumnNumber - 1);
+    }
+
     public void addColumnRight(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber) {
         if (values != null && !values.isEmpty() && values.size() != rows.size()) {
             throw new IllegalArgumentException("Size of values does not match amount of rows.");
@@ -134,11 +139,15 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
             }
         }
 
+        if (refColumnNumber <= 0) {
+            refColumnNumber = 1; //fix for column A - add left column
+        }
+
         for (int i = 0; i < rows.size(); i++) {
             if (values == null || values.isEmpty()) {
-                rows.get(i).getCells().add(refColumnNumber, new SpreadsheetCell(rows.get(i).rowNumber, refColumnNumber, ""));
+                rows.get(i).getCells().add(refColumnNumber, new SpreadsheetCell(rows.get(i).rowNumber, refColumnNumber + 1, ""));
             } else {
-                rows.get(i).getCells().add(refColumnNumber, new SpreadsheetCell(rows.get(i).rowNumber, refColumnNumber, values.get(i)));
+                rows.get(i).getCells().add(refColumnNumber, new SpreadsheetCell(rows.get(i).rowNumber, refColumnNumber + 1, values.get(i)));
             }
         }
     }

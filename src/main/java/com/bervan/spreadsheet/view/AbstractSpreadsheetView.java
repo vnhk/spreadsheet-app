@@ -40,14 +40,15 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         SpreadsheetCell cell = SpreadsheetService.findCellById(rows, cellId);
         if (cell != null) {
             cell.setValue(value);
-            spreadsheetService.evaluateAllFormulas(rows);
             refreshView(rows);
         }
     }
 
     @ClientCallable
     public void addColumnLeft(Integer columnNumber) {
-        showPrimaryNotification(" addColumnLeft for " + columnNumber);
+        spreadsheetService.addColumnLeft(rows, null, columnNumber);
+        refreshView(rows);
+        showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " added!");
     }
 
     @ClientCallable
@@ -215,6 +216,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void refreshView(List<SpreadsheetRow> rows) {
         removeAll();
+        spreadsheetService.evaluateAllFormulas(rows);
         VerticalLayout spreadsheetLayout = createSpreadsheetLayout(rows);
         add(spreadsheetLayout);
     }

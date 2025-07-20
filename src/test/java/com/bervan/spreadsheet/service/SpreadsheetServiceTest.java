@@ -15,7 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class SpreadsheetServiceTest {
     @Mock
@@ -29,6 +30,41 @@ class SpreadsheetServiceTest {
             )
     );
 
+
+    @Test
+    void addColumnLeft() {
+        int refColumnNumber = 2;
+        List<Object> values = new ArrayList<>();
+        List<SpreadsheetRow> rows = new ArrayList<>();
+        SpreadsheetRow row = new SpreadsheetRow(1);
+        SpreadsheetCell cell1 = new SpreadsheetCell(1, 1, "=+(F1,B1)"); // A1
+        // here we add new empty column
+        SpreadsheetCell cell2 = new SpreadsheetCell(1, 2, "=+(A1,C1)"); // B1
+        SpreadsheetCell cell3 = new SpreadsheetCell(1, 3, "=+(A1,5)");  // C1
+        SpreadsheetCell cell4 = new SpreadsheetCell(1, 4, "=+(C1,5)");  // D1
+        SpreadsheetCell cell5 = new SpreadsheetCell(1, 5, "=+(1,5)");   // E1
+        SpreadsheetCell cell6 = new SpreadsheetCell(1, 6, "=+(A1,5)");  // F1
+        row.addCell(cell1, cell2, cell3, cell4, cell5, cell6);
+        rows.add(row);
+        spreadsheetService.addColumnLeft(rows, values, refColumnNumber);
+
+        assertEquals(row.getCells().get(0).getFormula(), "=+(G1,C1)");  // F1 -> G1, B1 -> C1
+        assertNull(row.getCells().get(1).getFormula());                        // Newly inserted column (empty cell)
+        assertEquals(row.getCells().get(1).getValue(), "");             // Should be empty string
+        assertEquals(row.getCells().get(2).getFormula(), "=+(A1,D1)");  // C1 -> D1
+        assertEquals(row.getCells().get(3).getFormula(), "=+(A1,5)");   // Unaffected
+        assertEquals(row.getCells().get(4).getFormula(), "=+(D1,5)");   // C1 -> D1
+        assertEquals(row.getCells().get(5).getFormula(), "=+(1,5)");    // No cell reference, stays the same
+        assertEquals(row.getCells().get(6).getFormula(), "=+(A1,5)");   // Unaffected
+
+        assertEquals(row.getCells().get(0).getCellId(), "A1");
+        assertEquals(row.getCells().get(1).getCellId(), "B1");
+        assertEquals(row.getCells().get(2).getCellId(), "C1");
+        assertEquals(row.getCells().get(3).getCellId(), "D1");
+        assertEquals(row.getCells().get(4).getCellId(), "E1");
+        assertEquals(row.getCells().get(5).getCellId(), "F1");
+        assertEquals(row.getCells().get(6).getCellId(), "G1");
+    }
 
     @Test
     void addColumnRight() {
@@ -48,12 +84,26 @@ class SpreadsheetServiceTest {
         rows.add(row);
         spreadsheetService.addColumnRight(rows, values, refColumnNumber);
 
+        assertEquals(row.getCells().get(0).getCellId(), "A1");
         assertEquals(row.getCells().get(0).getFormula(), "=+(G1,B1)");
+
+        assertEquals(row.getCells().get(1).getCellId(), "B1");
         assertEquals(row.getCells().get(1).getFormula(), "=+(A1,D1)");
+
+        assertEquals(row.getCells().get(2).getCellId(), "C1");
         assertEquals(row.getCells().get(2).getFormula(), null);
+        assertEquals(row.getCells().get(2).getValue(), "");
+
+        assertEquals(row.getCells().get(3).getCellId(), "D1");
         assertEquals(row.getCells().get(3).getFormula(), "=+(A1,5)");
+
+        assertEquals(row.getCells().get(4).getCellId(), "E1");
         assertEquals(row.getCells().get(4).getFormula(), "=+(D1,5)");
+
+        assertEquals(row.getCells().get(5).getCellId(), "F1");
         assertEquals(row.getCells().get(5).getFormula(), "=+(1,5)");
+
+        assertEquals(row.getCells().get(6).getCellId(), "G1");
         assertEquals(row.getCells().get(6).getFormula(), "=+(A1,5)");
     }
 
@@ -63,16 +113,16 @@ class SpreadsheetServiceTest {
         List<SpreadsheetRow> rows1SimpleFunction = getRows_1_simple_function();
         spreadsheetService.evaluateAllFormulas(rows1SimpleFunction);
 
-        // A1 = =+(1, 2) → 3
+        // A1 = =+(1, 2)  ->  3
         assertEquals(3.0, rows1SimpleFunction.get(0).getCell(0).getValue());
 
-        // B2 = =+(A1, 3) → 3 + 3 = 6
+        // B2 = =+(A1, 3)  ->  3 + 3 = 6
         assertEquals(6.0, rows1SimpleFunction.get(1).getCell(1).getValue());
 
-        // C3 = 42 → should stay 42
+        // C3 = 42  ->  should stay 42
         assertEquals(42, rows1SimpleFunction.get(2).getCell(2).getValue());
 
-        // D4 = =+(A1, B2) → 3 + 6 = 9
+        // D4 = =+(A1, B2)  ->  3 + 6 = 9
         assertEquals(9.0, rows1SimpleFunction.get(3).getCell(3).getValue());
 
         assertEquals("Test 12", rows1SimpleFunction.get(0).getCell(1).getValue());
@@ -84,16 +134,16 @@ class SpreadsheetServiceTest {
         List<SpreadsheetRow> rows1SimpleFunction = getRows_1_simple_reversed_function();
         spreadsheetService.evaluateAllFormulas(rows1SimpleFunction);
 
-        // D4 = =+(1, 2) → 3
+        // D4 = =+(1, 2)  ->  3
         assertEquals(3.0, rows1SimpleFunction.get(3).getCell(3).getValue());
 
-        // C3 = =+(A1, 3) → 45 + 3 = 48
+        // C3 = =+(A1, 3)  ->  45 + 3 = 48
         assertEquals(48.0, rows1SimpleFunction.get(2).getCell(2).getValue());
 
-        // B2 = 42 → should stay 42
+        // B2 = 42  ->  should stay 42
         assertEquals(42, rows1SimpleFunction.get(1).getCell(1).getValue());
 
-        // A1 = =+(D4, B2) → 3 + 42 = 45
+        // A1 = =+(D4, B2)  ->  3 + 42 = 45
         assertEquals(45.0, rows1SimpleFunction.get(0).getCell(0).getValue());
 
         // Other text values
@@ -265,16 +315,16 @@ class SpreadsheetServiceTest {
                 // Reversed formulas and values:
                 if (rowIndex == 4 && colIndex == 4) {
                     value = "=+(1,2)";
-                    // D4 = =+(1, 2) → 3
+                    // D4 = =+(1, 2)  ->  3
                 } else if (rowIndex == 3 && colIndex == 3) {
                     value = "=+(A1,3)";
-                    // C3 = =+(A1, 3) → 45 + 3 = 48
+                    // C3 = =+(A1, 3)  ->  45 + 3 = 48
                 } else if (rowIndex == 2 && colIndex == 2) {
                     value = 42;
-                    // B2 = 42 → should stay 42
+                    // B2 = 42  ->  should stay 42
                 } else if (rowIndex == 1 && colIndex == 1) {
                     value = "=+(D4,B2)";
-                    // A1 = =+(D4, B2) → 3 + 42 = 45
+                    // A1 = =+(D4, B2)  ->  3 + 42 = 45
                 } else {
                     value = "Test " + rowIndex + colIndex;
                 }
