@@ -128,7 +128,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
             for (SpreadsheetCell cell : row.getCells()) {
                 if (cell.hasFormula()) {
                     String formula = cell.getFormula();
-                    for (FunctionArgument argument : formulaParser.extractFunctionArguments(formula, rows)) {
+                    for (FunctionArgument argument : getFunctionArguments(rows, formula)) {
                         if (argument instanceof CellReferenceArgument) {
                             SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
                             String oldCellId = cellInFormula.getCellId();
@@ -183,7 +183,58 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                     rows.get(i).getCells().add(refColumnNumber - 1, new SpreadsheetCell(rows.get(i).rowNumber, refColumnNumber, values.get(i)));
                 }
             }
-
         }
+    }
+
+    public void deleteColumn(List<SpreadsheetRow> rows, int refColumnNumber) {
+        //first update formulas
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.hasFormula()) {
+                    String formula = cell.getFormula();
+                    for (FunctionArgument argument : getFunctionArguments(rows, formula)) {
+                        if (argument instanceof CellReferenceArgument) {
+                            SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
+                            String oldCellId = cellInFormula.getCellId();
+                            int columnNumber = cellInFormula.getColumnNumber();
+                            int rowNumber = cellInFormula.getRowNumber();
+
+                            if (columnNumber > refColumnNumber) {
+                                columnNumber--;
+                            }
+                            String newCellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
+                            formula = formula.replaceAll(oldCellId, newCellId);
+                        }
+                    }
+                    cell.setNewValueAndCellRelatedFields(formula);
+                }
+            }
+        }
+
+        //delete column with given ref column number
+        for (SpreadsheetRow row : rows) {
+            SpreadsheetCell toBeRemoved = null;
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.getColumnNumber() == refColumnNumber) {
+                    toBeRemoved = cell;
+                    break;
+                }
+            }
+            row.getCells().remove(toBeRemoved);
+        }
+
+        //then update columnNumbers
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+
+                if (cell.getColumnNumber() >= refColumnNumber) {
+                    cell.updateColumnNumber(cell.getColumnNumber() - 1);
+                }
+            }
+        }
+    }
+
+    public List<FunctionArgument> getFunctionArguments(List<SpreadsheetRow> rows, String formula) {
+        return formulaParser.extractFunctionArguments(formula, rows);
     }
 }

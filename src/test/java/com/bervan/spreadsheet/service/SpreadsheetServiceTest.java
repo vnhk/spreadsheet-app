@@ -68,7 +68,7 @@ class SpreadsheetServiceTest {
 
 
     @Test
-    void duplicateColumn() {
+    void duplicateColumnAndDelete() {
         int refColumnNumber = 2;
         List<SpreadsheetRow> rows = new ArrayList<>();
         SpreadsheetRow row = new SpreadsheetRow(1);
@@ -103,6 +103,27 @@ class SpreadsheetServiceTest {
 
         assertEquals(row.getCells().get(6).getCellId(), "G1");
         assertEquals(row.getCells().get(6).getFormula(), "=+(A1,5)");
+
+        spreadsheetService.deleteColumn(rows, refColumnNumber);
+
+        assertEquals(row.getCells().get(0).getCellId(), "A1");
+        assertEquals(row.getCells().get(0).getFormula(), "=+(F1,B1)");
+
+        assertEquals(row.getCells().get(1).getCellId(), "B1");
+        assertEquals(row.getCells().get(1).getFormula(), "=+(A1,C1)");
+
+        assertEquals(row.getCells().get(2).getCellId(), "C1");
+        assertEquals(row.getCells().get(2).getFormula(), "=+(A1,5)");
+
+        assertEquals(row.getCells().get(3).getCellId(), "D1");
+        assertEquals(row.getCells().get(3).getFormula(), "=+(C1,5)");
+
+        assertEquals(row.getCells().get(4).getCellId(), "E1");
+        assertEquals(row.getCells().get(4).getFormula(), "=+(1,5)");
+
+        assertEquals(row.getCells().get(5).getCellId(), "F1");
+        assertEquals(row.getCells().get(5).getFormula(), "=+(A1,5)");
+
     }
 
     @Test

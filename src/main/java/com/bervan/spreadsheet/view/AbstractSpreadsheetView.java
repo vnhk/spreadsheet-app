@@ -1,12 +1,15 @@
 package com.bervan.spreadsheet.view;
 
 import com.bervan.common.AbstractPageView;
+import com.bervan.spreadsheet.functions.CellReferenceArgument;
+import com.bervan.spreadsheet.functions.FunctionArgument;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
@@ -20,7 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @JsModule("./spreadsheet-context-menu.js")
@@ -67,7 +72,49 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     @ClientCallable
     public void deleteColumn(Integer columnNumber) {
-        showPrimaryNotification(" deleteColumn for " + columnNumber);
+        StringBuilder confirmationMessageDetails = new StringBuilder();
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                //collect all formulas except formulas in column with columnNumber
+                if (cell.hasFormula() && cell.getColumnNumber() != columnNumber) {
+                    List<FunctionArgument> functionArguments = spreadsheetService.getFunctionArguments(rows, cell.getFormula());
+                    Set<FunctionArgument> formulasThatUseColumnToBeDeleted = functionArguments.stream().filter(e -> e instanceof CellReferenceArgument)
+                            .filter(e -> ((CellReferenceArgument) e).getCell().getColumnNumber() == columnNumber)
+                            .collect(Collectors.toSet());
+                    if (!formulasThatUseColumnToBeDeleted.isEmpty()) {
+                        confirmationMessageDetails.append(" ").append(cell.getCellId());
+                    }
+                }
+            }
+        }
+
+        if (!confirmationMessageDetails.isEmpty()) {
+            ConfirmDialog confirmDialog = new ConfirmDialog();
+            confirmDialog.setHeader("Column " + SpreadsheetUtils.getColumnHeader(columnNumber));
+            confirmDialog.setText("Are you sure you want to delete this column? It contains cells used in other formulas: "
+                    + confirmationMessageDetails);
+
+            confirmDialog.setConfirmText("Delete Column: " + SpreadsheetUtils.getColumnHeader(columnNumber));
+            confirmDialog.setConfirmButtonTheme("error primary");
+            confirmDialog.addConfirmListener(event -> {
+                deleteColumnConfirmed(columnNumber);
+            });
+
+            confirmDialog.setCancelText("Cancel");
+            confirmDialog.setCancelable(true);
+            confirmDialog.addCancelListener(event -> {
+            });
+
+            confirmDialog.open();
+        } else {
+            deleteColumnConfirmed(columnNumber);
+        }
+    }
+
+    private void deleteColumnConfirmed(Integer columnNumber) {
+        spreadsheetService.deleteColumn(rows, columnNumber);
+        refreshView(rows);
+        showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " deleted!");
     }
 
 
