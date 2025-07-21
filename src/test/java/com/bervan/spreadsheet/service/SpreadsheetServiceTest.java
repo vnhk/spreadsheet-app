@@ -66,6 +66,45 @@ class SpreadsheetServiceTest {
         assertEquals(row.getCells().get(6).getCellId(), "G1");
     }
 
+
+    @Test
+    void duplicateColumn() {
+        int refColumnNumber = 2;
+        List<SpreadsheetRow> rows = new ArrayList<>();
+        SpreadsheetRow row = new SpreadsheetRow(1);
+        SpreadsheetCell cell1 = new SpreadsheetCell(1, 1, "=+(F1,B1)"); // A1
+        // here we add new duplicated column
+        SpreadsheetCell cell2 = new SpreadsheetCell(1, 2, "=+(A1,C1)"); // B1
+        SpreadsheetCell cell3 = new SpreadsheetCell(1, 3, "=+(A1,5)");  // C1
+        SpreadsheetCell cell4 = new SpreadsheetCell(1, 4, "=+(C1,5)");  // D1
+        SpreadsheetCell cell5 = new SpreadsheetCell(1, 5, "=+(1,5)");   // E1
+        SpreadsheetCell cell6 = new SpreadsheetCell(1, 6, "=+(A1,5)");  // F1
+        row.addCell(cell1, cell2, cell3, cell4, cell5, cell6);
+        rows.add(row);
+        spreadsheetService.duplicateColumn(rows, refColumnNumber);
+
+        assertEquals(row.getCells().get(0).getCellId(), "A1");
+        assertEquals(row.getCells().get(0).getFormula(), "=+(G1,B1)");
+
+        assertEquals(row.getCells().get(1).getCellId(), "B1");
+        assertEquals(row.getCells().get(1).getFormula(), "=+(A1,D1)");
+
+        assertEquals(row.getCells().get(2).getCellId(), "C1");
+        assertEquals(row.getCells().get(2).getFormula(), "=+(A1,D1)");
+
+        assertEquals(row.getCells().get(3).getCellId(), "D1");
+        assertEquals(row.getCells().get(3).getFormula(), "=+(A1,5)");
+
+        assertEquals(row.getCells().get(4).getCellId(), "E1");
+        assertEquals(row.getCells().get(4).getFormula(), "=+(D1,5)");
+
+        assertEquals(row.getCells().get(5).getCellId(), "F1");
+        assertEquals(row.getCells().get(5).getFormula(), "=+(1,5)");
+
+        assertEquals(row.getCells().get(6).getCellId(), "G1");
+        assertEquals(row.getCells().get(6).getFormula(), "=+(A1,5)");
+    }
+
     @Test
     void addColumnRight() {
         int refColumnNumber = 2;

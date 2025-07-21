@@ -95,6 +95,20 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         }
     }
 
+    public void duplicateColumn(List<SpreadsheetRow> rows, int refColumnNumber) {
+        //addColumnRight and copy values
+        addColumnRight(rows, null, refColumnNumber);
+        for (SpreadsheetRow row : rows) {
+            SpreadsheetCell newCell = row.getCell(refColumnNumber);
+            SpreadsheetCell oldCell = row.getCell(refColumnNumber - 1);
+            if (oldCell.hasFormula()) {
+                newCell.setNewValueAndCellRelatedFields(oldCell.getFormula());
+            } else {
+                newCell.setNewValueAndCellRelatedFields(oldCell.getValue());
+            }
+        }
+    }
+
     public void addColumnLeft(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber) {
         addColumnOnLeftOrRight(rows, values, refColumnNumber, false);
     }

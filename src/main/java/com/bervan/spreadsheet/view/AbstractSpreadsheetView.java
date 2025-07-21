@@ -60,7 +60,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     @ClientCallable
     public void duplicateColumn(Integer columnNumber) {
-        showPrimaryNotification(" duplicateColumn for " + columnNumber);
+        spreadsheetService.duplicateColumn(rows, columnNumber);
+        refreshView(rows);
+        showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " duplicated!");
     }
 
     @ClientCallable
