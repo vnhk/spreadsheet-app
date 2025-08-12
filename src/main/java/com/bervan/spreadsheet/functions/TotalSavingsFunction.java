@@ -1,50 +1,44 @@
-//package com.bervan.spreadsheet.functions;
-//
-//import com.bervan.spreadsheet.model.Cell;
-//import org.springframework.stereotype.Component;
-//
-//import java.util.List;
-//
-//@Component
-//public class TotalSavingsFunction implements SpreadsheetFunction {
-//    @Override
-//    public String calculate(List<String> allParams, List<List<Cell>> rows) {
-//        try {
-//            List<Object> paramsCareAboutOrder = getParams_careAboutOrder(allParams, rows);
-//
-//            if (paramsCareAboutOrder.size() != 3) {
-//                throw new RuntimeException("Incorrect Params");
-//            }
-//
-//            double initialCapital = getDouble(paramsCareAboutOrder, 0);
-//            double interestRate = getDouble(paramsCareAboutOrder, 1);
-//            double years = getDouble(paramsCareAboutOrder, 2);
-//
-//            return String.valueOf(calculateTotalSavings(initialCapital, interestRate, years));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return "ERROR!";
-//        }
-//    }
-//
-//    private double calculateTotalSavings(double initialCapital, double interestRate, double years) {
-//        return initialCapital * Math.pow(1 + interestRate, years);
-//    }
-//
-//
-//    @Override
-//    public String getInfo() {
-//        return """
-//                Examples: <br>
-//                Total savings after 10 years with initial capital 10000 and 5% interest rate <br>
-//                    (a) =TOTAL_SAVINGS(10000,0.05,10) <br>
-//                    (b) =TOTAL_SAVINGS(10000,C1,D2) <br>
-//                    (c) =TOTAL_SAVINGS(C1,B2,G10)
-//                """;
-//    }
-//
-//    @Override
-//    public String getName() {
-//        return "TOTAL_SAVINGS";
-//    }
-//}
+package com.bervan.spreadsheet.functions;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+import static com.bervan.spreadsheet.functions.TotalSavingsFunction.FUNCTION_NAME;
+
+@Component(FUNCTION_NAME)
+@Slf4j
+public class TotalSavingsFunction implements SpreadsheetFunction {
+    public final static String FUNCTION_NAME = "TOTAL_SAVINGS";
+
+    private double calculateTotalSavings(double initialCapital, double interestRate, double years) {
+        return initialCapital * Math.pow(1 + interestRate, years);
+    }
+
+
+    @Override
+    public FunctionArgument calculate(List<FunctionArgument> functionArguments) {
+        if (functionArguments.size() != 3) {
+            throw new RuntimeException("Incorrect Params for " + FUNCTION_NAME + " function");
+        }
+
+        return new ConstantArgument(String.valueOf(calculateTotalSavings(functionArguments.get(0).asDouble(), functionArguments.get(1).asDouble(), functionArguments.get(2).asDouble())));
+    }
+
+    @Override
+    public String getInfo() {
+        return """
+                Examples: <br>
+                Total savings after 10 years with initial capital 10000 and 5% interest rate <br>
+                    (a) =TOTAL_SAVINGS(10000,0.05,10) <br>
+                    (b) =TOTAL_SAVINGS(10000,C1,D2) <br>
+                    (c) =TOTAL_SAVINGS(C1,B2,G10)
+                """;
+    }
+
+    @Override
+    public String getName() {
+        return FUNCTION_NAME;
+    }
+}
