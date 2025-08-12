@@ -203,8 +203,8 @@ public class SpreadsheetUtils {
     }
 
     public static int getColumnNumber(String columnSymbol) {
-        int columnNumber = 1;
-        for (int i = 1; i <= columnSymbol.length(); i++) {
+        int columnNumber = 0;
+        for (int i = 0; i < columnSymbol.length(); i++) {
             columnNumber = columnNumber * 26 + (columnSymbol.charAt(i) - 'A' + 1);
         }
         return columnNumber;

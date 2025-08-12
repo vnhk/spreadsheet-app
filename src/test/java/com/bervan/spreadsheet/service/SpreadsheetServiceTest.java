@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +30,23 @@ class SpreadsheetServiceTest {
                     , new DefaultCellResolver()
             )
     );
+
+    @Test
+    void colonSeparatedSumFunction() {
+        SpreadsheetRow row = new SpreadsheetRow(1);
+        row.addCell(new SpreadsheetCell(1, 1, "1"));
+        row.addCell(new SpreadsheetCell(1, 2, "2"));
+        row.addCell(new SpreadsheetCell(1, 3, "3"));
+        row.addCell(new SpreadsheetCell(1, 4, "4"));
+        row.addCell(new SpreadsheetCell(1, 5, "5"));
+        SpreadsheetCell formulaCell = new SpreadsheetCell(1, 6, "=+(A1:E1)");
+        row.addCell(formulaCell);
+
+        spreadsheetService.evaluateAllFormulas(Collections.singletonList(row));
+
+        Object value = formulaCell.getValue();
+        assertEquals(15.0, value);
+    }
 
 
     @Test

@@ -1,14 +1,18 @@
 package com.bervan.spreadsheet.functions;
 
 import com.bervan.spreadsheet.model.SpreadsheetRow;
+import com.bervan.spreadsheet.utils.SpreadsheetUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class FormulaParser {
     private final CellResolver cellResolver;
     private final FunctionRegistry functionRegistry;
@@ -75,10 +79,49 @@ public class FormulaParser {
             return Collections.emptyList();
         }
 
-        return Arrays.stream(argsString.split(","))
-                .map(String::trim)
-                .map(e -> toArgument(e, rows))
-                .collect(Collectors.toList());
+        if (argsString.contains(":")) {
+            String[] args = argsString.split(":");
+            if (args.length == 2) {
+                String startCell = args[0];
+                String endCell = args[1];
+
+                int startRowNumberFromColumn = SpreadsheetUtils.getRowNumberFromColumn(startCell);
+                int endRowNumberFromColumn = SpreadsheetUtils.getRowNumberFromColumn(endCell);
+                String startColumnHeader = SpreadsheetUtils.getColumnHeader(startCell);
+                String endColumnHeader = SpreadsheetUtils.getColumnHeader(endCell);
+
+                int startColumnNumber = SpreadsheetUtils.getColumnNumber(startColumnHeader);
+                int endColumnNumber = SpreadsheetUtils.getColumnNumber(endColumnHeader);
+
+                if (endColumnNumber < startColumnNumber) {
+                    throw new RuntimeException("Parse Arguments failed for: " + argsString + ". Incorrect colon expression");
+                }
+
+                if (startRowNumberFromColumn == endRowNumberFromColumn) {
+                    //1 row - multiple columns
+                    List<FunctionArgument> functionArguments = new ArrayList<>();
+                    for (int i = startColumnNumber; i <= endColumnNumber; i++) {
+                        functionArguments.add(toArgument(SpreadsheetUtils.getColumnHeader(i) + startRowNumberFromColumn, rows));
+                    }
+                    return functionArguments;
+                } else {
+                    //1 column - multiple rows
+                    if (!startColumnHeader.equals(endColumnHeader)) {
+                        throw new RuntimeException("Parse Arguments failed for: " + argsString + ". Incorrect colon expression");
+                    }
+                }
+            } else {
+                throw new RuntimeException("Parse Arguments failed for: " + argsString + ". Incorrect colon expression");
+            }
+
+        } else {
+            return Arrays.stream(argsString.split(","))
+                    .map(String::trim)
+                    .map(e -> toArgument(e, rows))
+                    .collect(Collectors.toList());
+        }
+
+        return null;
     }
 
     private FunctionArgument toArgument(String raw, List<SpreadsheetRow> rows) {
