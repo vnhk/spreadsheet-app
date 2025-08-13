@@ -240,12 +240,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         actionPanel.addClassName("spreadsheet-action-panel");
 
         Button addRowBtn = new Button("Add Row", event -> {
-            // TODO: add row logic
+            addRow(rows);
+            showPrimaryNotification("Row " + (rows.size())+ " added");
         });
         addRowBtn.addClassName("spreadsheet-action-button");
 
         Button addColumnBtn = new Button("Add Column", event -> {
-            // TODO: add column logic
+            addColumn(rows);
+            showPrimaryNotification("Column " + SpreadsheetUtils.getColumnHeader(rows.get(0).getCells().size() + 1) + " added");
         });
         addColumnBtn.addClassName("spreadsheet-action-button");
 
@@ -262,6 +264,27 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         layout.add(actionPanel, tableDiv);
         return layout;
     }
+
+    private void addRow(List<SpreadsheetRow> rows) {
+        SpreadsheetRow newRow = new SpreadsheetRow(rows.size() + 1);
+        if (!rows.isEmpty()) {
+            ArrayList<SpreadsheetCell> newEmptyCells = new ArrayList<>();
+            for (SpreadsheetCell cell : rows.get(0).getCells()) {
+                newEmptyCells.add(new SpreadsheetCell(newRow.rowNumber, cell.getColumnNumber(), ""));
+            }
+            newRow.setCells(newEmptyCells);
+        }
+        rows.add(newRow);
+        refreshView(rows);
+    }
+
+    private void addColumn(List<SpreadsheetRow> rows) {
+        for (SpreadsheetRow row : rows) {
+            row.addCell(new SpreadsheetCell(row.rowNumber, row.getCells().get(row.getCells().size() - 1).getColumnNumber() + 1, ""));
+        }
+        refreshView(rows);
+    }
+
 
     private void refreshView(List<SpreadsheetRow> rows) {
         removeAll();
