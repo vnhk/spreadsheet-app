@@ -6,7 +6,7 @@ import java.util.List;
 
 import static com.bervan.spreadsheet.functions.SavingsWithMonthlyContribution.FUNCTION_NAME;
 
-@Component(FUNCTION_NAME)
+@Component("F#" + FUNCTION_NAME)
 public class SavingsWithMonthlyContribution implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "SAVINGS_M_CONTR";
 

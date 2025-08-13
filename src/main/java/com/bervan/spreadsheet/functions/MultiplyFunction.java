@@ -6,10 +6,9 @@ import java.util.List;
 
 import static com.bervan.spreadsheet.functions.MultiplyFunction.FUNCTION_NAME;
 
-@Component(FUNCTION_NAME)
+@Component("F#" + FUNCTION_NAME)
 public class MultiplyFunction implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "*";
-
 
     @Override
     public FunctionArgument calculate(List<FunctionArgument> args) {

@@ -11,7 +11,7 @@ import java.util.List;
 
 import static com.bervan.spreadsheet.functions.CurrencyFunction.FUNCTION_NAME;
 
-@Component(FUNCTION_NAME)
+@Component("F#" + FUNCTION_NAME)
 @Slf4j
 public class CurrencyFunction implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "CURRENCY";

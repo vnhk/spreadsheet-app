@@ -18,6 +18,6 @@ public class FunctionRegistry {
     }
 
     public Optional<SpreadsheetFunction> getFunction(String name) {
-        return Optional.ofNullable(functionMap.get(name.toUpperCase()));
+        return Optional.ofNullable(functionMap.get("F#" + name.toUpperCase()));
     }
 }

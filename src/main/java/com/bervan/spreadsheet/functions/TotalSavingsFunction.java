@@ -7,7 +7,7 @@ import java.util.List;
 
 import static com.bervan.spreadsheet.functions.TotalSavingsFunction.FUNCTION_NAME;
 
-@Component(FUNCTION_NAME)
+@Component("F#" + FUNCTION_NAME)
 @Slf4j
 public class TotalSavingsFunction implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "TOTAL_SAVINGS";
