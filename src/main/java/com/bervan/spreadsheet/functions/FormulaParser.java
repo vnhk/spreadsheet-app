@@ -109,6 +109,11 @@ public class FormulaParser {
                     if (!startColumnHeader.equals(endColumnHeader)) {
                         throw new RuntimeException("Parse Arguments failed for: " + argsString + ". Incorrect colon expression");
                     }
+                    List<FunctionArgument> functionArguments = new ArrayList<>();
+                    for (int i = startRowNumberFromColumn; i <= endRowNumberFromColumn; i++) {
+                        functionArguments.add(toArgument(startColumnHeader + i, rows));
+                    }
+                    return functionArguments;
                 }
             } else {
                 throw new RuntimeException("Parse Arguments failed for: " + argsString + ". Incorrect colon expression");
@@ -120,8 +125,6 @@ public class FormulaParser {
                     .map(e -> toArgument(e, rows))
                     .collect(Collectors.toList());
         }
-
-        return null;
     }
 
     private FunctionArgument toArgument(String raw, List<SpreadsheetRow> rows) {

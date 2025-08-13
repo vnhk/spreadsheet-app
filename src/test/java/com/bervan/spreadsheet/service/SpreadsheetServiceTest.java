@@ -32,7 +32,7 @@ class SpreadsheetServiceTest {
     );
 
     @Test
-    void colonSeparatedSumFunction() {
+    void colonSeparatedSumFunction_1row() {
         SpreadsheetRow row = new SpreadsheetRow(1);
         row.addCell(new SpreadsheetCell(1, 1, "1"));
         row.addCell(new SpreadsheetCell(1, 2, "2"));
@@ -43,6 +43,28 @@ class SpreadsheetServiceTest {
         row.addCell(formulaCell);
 
         spreadsheetService.evaluateAllFormulas(Collections.singletonList(row));
+
+        Object value = formulaCell.getValue();
+        assertEquals(15.0, value);
+    }
+
+    @Test
+    void colonSeparatedSumFunction_1col() {
+        SpreadsheetRow row1 = new SpreadsheetRow(1);
+        row1.addCell(new SpreadsheetCell(1, 1, "1"));
+        SpreadsheetRow row2 = new SpreadsheetRow(2);
+        row2.addCell(new SpreadsheetCell(2, 1, "2"));
+        SpreadsheetRow row3 = new SpreadsheetRow(3);
+        row3.addCell(new SpreadsheetCell(3, 1, "3"));
+        SpreadsheetRow row4 = new SpreadsheetRow(4);
+        row4.addCell(new SpreadsheetCell(4, 1, "4"));
+        SpreadsheetRow row5 = new SpreadsheetRow(5);
+        row5.addCell(new SpreadsheetCell(5, 1, "5"));
+        SpreadsheetRow row6 = new SpreadsheetRow(6);
+        SpreadsheetCell formulaCell = new SpreadsheetCell(6, 1, "=+(A1:A5)");
+        row6.addCell(formulaCell);
+
+        spreadsheetService.evaluateAllFormulas(List.of(row1, row2, row3, row4, row5, row6));
 
         Object value = formulaCell.getValue();
         assertEquals(15.0, value);
