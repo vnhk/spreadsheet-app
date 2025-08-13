@@ -1,6 +1,9 @@
 package com.bervan.spreadsheet.service;
 
+import com.bervan.common.search.SearchRequest;
 import com.bervan.common.search.SearchService;
+import com.bervan.common.search.model.Operator;
+import com.bervan.common.search.model.SearchOperation;
 import com.bervan.common.service.BaseService;
 import com.bervan.spreadsheet.functions.CellReferenceArgument;
 import com.bervan.spreadsheet.functions.FormulaParser;
@@ -10,6 +13,7 @@ import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -236,5 +240,12 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
 
     public List<FunctionArgument> getFunctionArguments(List<SpreadsheetRow> rows, String formula) {
         return formulaParser.extractFunctionArguments(formula, rows);
+    }
+
+    public Optional<Spreadsheet> loadByName(String spreadsheetName) {
+        SearchRequest request = new SearchRequest();
+        request.addCriterion("BY_NAME", Operator.AND_OPERATOR, Spreadsheet.class, "name", SearchOperation.EQUALS_OPERATION, spreadsheetName);
+        Set<Spreadsheet> load = load(request, Pageable.ofSize(1));
+        return load.stream().findFirst();
     }
 }

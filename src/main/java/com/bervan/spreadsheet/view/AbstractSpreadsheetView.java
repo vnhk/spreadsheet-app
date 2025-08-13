@@ -3,10 +3,14 @@ package com.bervan.spreadsheet.view;
 import com.bervan.common.AbstractPageView;
 import com.bervan.spreadsheet.functions.CellReferenceArgument;
 import com.bervan.spreadsheet.functions.FunctionArgument;
+import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -16,15 +20,13 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Input;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,11 +35,15 @@ import java.util.stream.Collectors;
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private final SpreadsheetService spreadsheetService;
+    private Spreadsheet spreadsheet;
     private List<SpreadsheetRow> rows;
-
+    private TextArea infoTextArea = new TextArea("");
 
     public AbstractSpreadsheetView(SpreadsheetService service) {
         this.spreadsheetService = service;
+        infoTextArea.getStyle().setColor("white");
+        infoTextArea.setSizeFull();
+        infoTextArea.setVisible(false);
     }
 
     @ClientCallable
@@ -126,10 +132,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void init(String spreadsheetName) {
         // Load spreadsheet rows from service
+        spreadsheet = getOrCreate(spreadsheetName);
         rows = getRows(spreadsheetName);
         spreadsheetService.evaluateAllFormulas(rows);
         // Create editable HTML table
         refreshView(rows);
+        add(infoTextArea);
     }
 
     private Div createHTMLTable(List<SpreadsheetRow> rows) {
@@ -241,7 +249,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         Button addRowBtn = new Button("Add Row", event -> {
             addRow(rows);
-            showPrimaryNotification("Row " + (rows.size())+ " added");
+            showPrimaryNotification("Row " + (rows.size()) + " added");
         });
         addRowBtn.addClassName("spreadsheet-action-button");
 
@@ -251,12 +259,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
         addColumnBtn.addClassName("spreadsheet-action-button");
 
-        Button exportBtn = new Button("Export Data", event -> {
-            // TODO: export logic
+        Button save = new Button("Save", event -> {
+            save();
         });
-        exportBtn.addClassName("spreadsheet-action-button");
+        save.addClassName("spreadsheet-action-button");
 
-        actionPanel.add(addRowBtn, addColumnBtn, exportBtn);
+        actionPanel.add(addRowBtn, addColumnBtn, save);
 
         Div tableDiv = createHTMLTable(rows);
         tableDiv.getElement().executeJs("initContextMenu($0)", getElement());
@@ -280,7 +288,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void addColumn(List<SpreadsheetRow> rows) {
         for (SpreadsheetRow row : rows) {
-            row.addCell(new SpreadsheetCell(row.rowNumber, row.getCells().get(row.getCells().size() - 1).getColumnNumber() + 1, ""));
+            if (!row.getCells().isEmpty()) {
+                row.addCell(new SpreadsheetCell(row.rowNumber, row.getCells().get(row.getCells().size() - 1).getColumnNumber() + 1, ""));
+            } else {
+                row.addCell(new SpreadsheetCell(row.rowNumber, 1, ""));
+            }
         }
         refreshView(rows);
     }
@@ -305,7 +317,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         tr.appendChild(rowNumberCell);
     }
 
-    private List<SpreadsheetRow> getRows(String spreadsheetName) {
+    private List<SpreadsheetRow> getRows() {
         List<SpreadsheetRow> rows = new ArrayList<>();
 
         for (int rowIndex = 1; rowIndex <= 5; rowIndex++) {
@@ -336,5 +348,42 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         }
 
         return rows;
+    }
+
+    private void save() {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.findAndRegisterModules();
+            String jsonBody = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rows);
+            spreadsheet.setBody(jsonBody);
+            spreadsheetService.save(spreadsheet);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<SpreadsheetRow> getRows(String spreadsheetName) {
+        Spreadsheet spreadsheet = getOrCreate(spreadsheetName);
+        String body = spreadsheet.getBody();
+        if (body != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.findAndRegisterModules();
+            try {
+                return mapper.readValue(body, new TypeReference<List<SpreadsheetRow>>() {
+                });
+            } catch (JsonProcessingException e) {
+                showErrorNotification("Failed to retrieve spreadsheet body! Check text area below.");
+                infoTextArea.setValue(body);
+                infoTextArea.setLabel("Body:");
+                infoTextArea.setVisible(true);
+            }
+        }
+
+        return new ArrayList<>();
+    }
+
+    private Spreadsheet getOrCreate(String spreadsheetName) {
+        Optional<Spreadsheet> spreadsheetOptional = this.spreadsheetService.loadByName(spreadsheetName);
+        return spreadsheetOptional.orElseGet(() -> new Spreadsheet(spreadsheetName));
     }
 }
