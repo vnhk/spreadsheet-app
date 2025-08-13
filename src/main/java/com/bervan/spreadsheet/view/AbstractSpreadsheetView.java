@@ -16,6 +16,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Input;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -44,6 +45,13 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         infoTextArea.getStyle().setColor("white");
         infoTextArea.setSizeFull();
         infoTextArea.setVisible(false);
+    }
+
+    private static List<SpreadsheetRow> getSpreadsheetRows(String body) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        return mapper.readValue(body, new TypeReference<List<SpreadsheetRow>>() {
+        });
     }
 
     @ClientCallable
@@ -122,7 +130,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         refreshView(rows);
         showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " deleted!");
     }
-
 
     @Override
     public void setParameter(BeforeEvent event, String s) {
@@ -264,7 +271,50 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         });
         save.addClassName("spreadsheet-action-button");
 
-        actionPanel.add(addRowBtn, addColumnBtn, save);
+        Button importData = new Button("Import", event -> {
+            TextArea textArea = new TextArea();
+            textArea.setLabel("Data:");
+
+            ConfirmDialog confirmDialog = new ConfirmDialog();
+            confirmDialog.setHeader("Data Import");
+            confirmDialog.setText("Paste JSON Data you want to import");
+            confirmDialog.add(textArea);
+
+            confirmDialog.setConfirmText("Import");
+            confirmDialog.setConfirmButtonTheme("error primary");
+            confirmDialog.addConfirmListener(e -> {
+                try {
+                    List<SpreadsheetRow> spreadsheetRows = getSpreadsheetRows(textArea.getValue());
+                    spreadsheet.setBody(textArea.getValue());
+                    this.rows = spreadsheetRows;
+                } catch (JsonProcessingException ex) {
+                    showErrorNotification("Import failed!");
+                }
+            });
+
+            confirmDialog.setCancelText("Cancel");
+            confirmDialog.setCancelable(true);
+            confirmDialog.addCancelListener(e -> {
+            });
+        });
+        importData.addClassName("spreadsheet-action-button");
+
+        Button exportData = new Button("Export", event -> {
+            String body = getOrCreate(spreadsheet.getName()).getBody();
+            Dialog dialog = new Dialog();
+            TextArea textArea = new TextArea(body);
+            textArea.setLabel("Saved Data:");
+            textArea.setSizeFull();
+            textArea.setValue(body);
+            dialog.add(textArea);
+            dialog.setWidth("80vw");
+            dialog.open();
+        });
+        exportData.addClassName("spreadsheet-action-button");
+
+        Div gap = new Div();
+        gap.setWidth("10px");
+        actionPanel.add(addRowBtn, addColumnBtn, save, gap, importData, exportData);
 
         Div tableDiv = createHTMLTable(rows);
         tableDiv.getElement().executeJs("initContextMenu($0)", getElement());
@@ -297,7 +347,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         refreshView(rows);
     }
 
-
     private void refreshView(List<SpreadsheetRow> rows) {
         removeAll();
         spreadsheetService.evaluateAllFormulas(rows);
@@ -317,39 +366,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         tr.appendChild(rowNumberCell);
     }
 
-    private List<SpreadsheetRow> getRows() {
-        List<SpreadsheetRow> rows = new ArrayList<>();
-
-        for (int rowIndex = 1; rowIndex <= 5; rowIndex++) {
-            SpreadsheetRow row = new SpreadsheetRow();
-            row.rowNumber = rowIndex;
-
-            for (int colIndex = 1; colIndex <= 5; colIndex++) {
-                Object value;
-
-                // Sample formulas and values
-                if (rowIndex == 1 && colIndex == 1) {
-                    value = "=+(1, 2)";
-                } else if (rowIndex == 2 && colIndex == 2) {
-                    value = "=+(A1, 3)";
-                } else if (rowIndex == 3 && colIndex == 3) {
-                    value = 42;
-                } else if (rowIndex == 4 && colIndex == 4) {
-                    value = "=+(A1, B2)";
-                } else {
-                    value = "Test " + rowIndex + colIndex;
-                }
-
-                SpreadsheetCell cell = new SpreadsheetCell(rowIndex, colIndex, value);
-                row.cells.add(cell);
-            }
-
-            rows.add(row);
-        }
-
-        return rows;
-    }
-
     private void save() {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -366,12 +382,10 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Spreadsheet spreadsheet = getOrCreate(spreadsheetName);
         String body = spreadsheet.getBody();
         if (body != null) {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.findAndRegisterModules();
             try {
-                return mapper.readValue(body, new TypeReference<List<SpreadsheetRow>>() {
-                });
+                return getSpreadsheetRows(body);
             } catch (JsonProcessingException e) {
+                log.error("Failed to parse spreadsheet body!", e);
                 showErrorNotification("Failed to retrieve spreadsheet body! Check text area below.");
                 infoTextArea.setValue(body);
                 infoTextArea.setLabel("Body:");

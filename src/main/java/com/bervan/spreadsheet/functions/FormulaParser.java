@@ -35,7 +35,10 @@ public class FormulaParser {
 
         List<FunctionArgument> args = parseArguments(argsString, rows);
         SpreadsheetFunction function = functionRegistry.getFunction(functionName)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown function: " + functionName));
+                .orElseThrow(() -> {
+                    log.error("Unknown function: {}", functionName);
+                    return new IllegalArgumentException("Unknown function: " + functionName);
+                });
 
         return function.calculate(args);
     }

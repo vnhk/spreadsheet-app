@@ -14,6 +14,10 @@ public class SpreadsheetCell {
     private String formula;
     private CellType cellType;
 
+    public SpreadsheetCell() {
+
+    }
+
     public SpreadsheetCell(int rowNumber, int columnNumber, Object value) {
         if (rowNumber == 0) {
             throw new IllegalArgumentException("Row index cannot be equal to 0");

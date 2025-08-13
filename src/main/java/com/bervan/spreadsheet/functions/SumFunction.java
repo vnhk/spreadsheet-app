@@ -4,9 +4,12 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component(value = SumFunction.SUM_FUNCTION_NAME)
+import static com.bervan.spreadsheet.functions.SumFunction.FUNCTION_NAME;
+
+
+@Component("F#" + FUNCTION_NAME)
 public class SumFunction implements SpreadsheetFunction {
-    public final static String SUM_FUNCTION_NAME = "+";
+    public final static String FUNCTION_NAME = "+";
 
     @Override
     public FunctionArgument calculate(List<FunctionArgument> args) {
@@ -27,11 +30,12 @@ public class SumFunction implements SpreadsheetFunction {
                     (a) =+(A1,10) <br>
                     (b) =+(C0:C10) <br>
                     (c) =+(C1,B2,G10)
+                    (d) =+(1,2,-3.15)
                 """;
     }
 
     @Override
     public String getName() {
-        return SUM_FUNCTION_NAME;
+        return FUNCTION_NAME;
     }
 }
