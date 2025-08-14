@@ -150,6 +150,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                         functionArguments = getFunctionArgumentsForColonSeparator(splitColon, functionArguments);
                     }
 
+                    Map<String, String> replacedFormulaCells = new HashMap<>();
                     for (FunctionArgument argument : functionArguments) {
                         if (argument instanceof CellReferenceArgument) {
                             SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
@@ -166,10 +167,10 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                                     columnNumber++;
                                 }
                             }
-                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber);
+                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber, replacedFormulaCells);
                         }
                     }
-                    cell.setNewValueAndCellRelatedFields(formula);
+                    useReplacedCellsMappingToUpdateFormula(cell, replacedFormulaCells, formula);
                 }
             }
         }
@@ -207,12 +208,21 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         }
     }
 
+    //at the end replace all F#UUID with values (new cellsId) from map
+    private void useReplacedCellsMappingToUpdateFormula(SpreadsheetCell cell, Map<String, String> replacedFormulaCells, String formula) {
+        for (Map.Entry<String, String> mapping : replacedFormulaCells.entrySet()) {
+            formula = formula.replaceAll(mapping.getKey(), mapping.getValue());
+        }
+        cell.setNewValueAndCellRelatedFields(formula);
+    }
+
     /* deprecated */
     public void moveRowsInFormulasToEnsureBackwardCompatibility(List<SpreadsheetRow> rows) { //old row = 0 -> new row = 1
         //first update formulas
         for (SpreadsheetRow row : rows) {
             for (SpreadsheetCell cell : row.getCells()) {
                 if (cell.hasFormula()) {
+                    Map<String, String> replacedFormulaCells = new HashMap<>();
                     String formula = cell.getFormula();
                     List<FunctionArgument> functionArguments = getFunctionArguments(rows, formula);
 
@@ -221,33 +231,49 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                         functionArguments = getFunctionArgumentsForColonSeparator(splitColon, functionArguments);
                     }
                     for (FunctionArgument argument : functionArguments) {
-                        formula = updateFormula(formula, argument);
+                        formula = updateFormula(formula, argument, replacedFormulaCells);
                     }
-                    cell.setNewValueAndCellRelatedFields(formula);
+
+                    useReplacedCellsMappingToUpdateFormula(cell, replacedFormulaCells, formula);
                 }
             }
         }
     }
 
-    private String updateFormula(String formula, FunctionArgument argument) {
+    private String updateFormula(String formula, FunctionArgument argument, Map<String, String> replacedFormulaCells) {
         if (argument instanceof CellReferenceArgument) {
             SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
             String oldCellId = cellInFormula.getCellId();
             int columnNumber = cellInFormula.getColumnNumber();
             int rowNumber = cellInFormula.getRowNumber();
             rowNumber++;
-            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber);
+            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber, replacedFormulaCells);
         }
         return formula;
     }
 
     @NotNull
-    private String updateFormula(String formula, String oldCellId, int columnNumber, int rowNumber) {
+    private String updateFormula(String formula, String oldCellId, int columnNumber, int rowNumber, Map<String, String> replacedFormulaCells) {
+        //it's needed because for =*(O2,0.01,O1,O3) and +1 operation:
+        //01 is replaced with 02 -> =*(O2,0.01,O2,O3)
+        //02 is replaced with 03 -> =*(O3,0.01,O3,O3)
+        //03 is replaced with 04 -> =*(O4,0.01,O4,O4) #incorrect result
+        //to prevent this we need to:
+        //replace all 01 with F#UUID_1 - 02
+        //replace all 02 with F#UUID_2 - 03
+        //replace all 03 with F#UUID_3 - 04
+        //at the end replace all F#UUID with values from map
+
         String newCellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
-        formula = formula.replaceAll(oldCellId + ",", newCellId + ","); //to prevent replacing in (B11,B1) -> B1 to B2
-        formula = formula.replaceAll(oldCellId + "\\)", newCellId + ")");
-        formula = formula.replaceAll(oldCellId + " ", newCellId + " ");
-        formula = formula.replaceAll(oldCellId + ":", newCellId + ":");
+        String fUUID = "F#" + UUID.randomUUID();
+
+        formula = formula.replaceFirst(oldCellId + ",", fUUID + ","); //to prevent replacing in (B11,B1) -> B1 to B2
+        formula = formula.replaceFirst(oldCellId + "\\)", fUUID + ")");
+        formula = formula.replaceFirst(oldCellId + " ", fUUID + " ");
+        formula = formula.replaceFirst(oldCellId + ":", fUUID + ":");
+
+        replacedFormulaCells.put(fUUID, newCellId);
+
         return formula;
     }
 
@@ -257,6 +283,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
             for (SpreadsheetCell cell : row.getCells()) {
                 if (cell.hasFormula()) {
                     String formula = cell.getFormula();
+                    Map<String, String> replacedFormulaCells = new HashMap<>();
                     for (FunctionArgument argument : getFunctionArguments(rows, formula)) {
                         if (argument instanceof CellReferenceArgument) {
                             SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
@@ -267,10 +294,10 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                             if (columnNumber > refColumnNumber) {
                                 columnNumber--;
                             }
-                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber);
+                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber, replacedFormulaCells);
                         }
                     }
-                    cell.setNewValueAndCellRelatedFields(formula);
+                    useReplacedCellsMappingToUpdateFormula(cell, replacedFormulaCells, formula);
                 }
             }
         }
