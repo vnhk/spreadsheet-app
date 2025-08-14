@@ -25,7 +25,7 @@ class SpreadsheetServiceTest {
     SpreadsheetService spreadsheetService = new SpreadsheetService(spreadsheetRepository, new SearchService(),
             new FormulaParser(new FunctionRegistry(
                     Map.of(
-                            SumFunction.SUM_FUNCTION_NAME, new SumFunction()
+                            "F#" + SumFunction.FUNCTION_NAME, new SumFunction()
                     ))
                     , new DefaultCellResolver()
             )
@@ -68,6 +68,48 @@ class SpreadsheetServiceTest {
 
         Object value = formulaCell.getValue();
         assertEquals(15.0, value);
+    }
+
+    @Test
+    void colonSeparatedSumFunction_1col_moreRowsInFormulaThanRows() {
+        SpreadsheetRow row1 = new SpreadsheetRow(1);
+        SpreadsheetCell formulaCell = new SpreadsheetCell(6, 1, "=+(A2:A50)");
+
+        row1.addCell(formulaCell);
+        SpreadsheetRow row2 = new SpreadsheetRow(2);
+        row2.addCell(new SpreadsheetCell(2, 1, "2"));
+        SpreadsheetRow row3 = new SpreadsheetRow(3);
+        row3.addCell(new SpreadsheetCell(3, 1, "3"));
+        SpreadsheetRow row4 = new SpreadsheetRow(4);
+        row4.addCell(new SpreadsheetCell(4, 1, "4"));
+        SpreadsheetRow row5 = new SpreadsheetRow(5);
+        row5.addCell(new SpreadsheetCell(5, 1, "5"));
+
+        spreadsheetService.evaluateAllFormulas(List.of(row1, row2, row3, row4, row5));
+
+        Object value = formulaCell.getValue();
+        assertEquals(14.0, value);
+    }
+
+    @Test
+    void commaSeparatedSumFunction_moreRowsInFormulaThanRows() {
+        SpreadsheetRow row1 = new SpreadsheetRow(1);
+        SpreadsheetCell formulaCell = new SpreadsheetCell(6, 1, "=+(A2,A7)");
+
+        row1.addCell(formulaCell);
+        SpreadsheetRow row2 = new SpreadsheetRow(2);
+        row2.addCell(new SpreadsheetCell(2, 1, "2"));
+        SpreadsheetRow row3 = new SpreadsheetRow(3);
+        row3.addCell(new SpreadsheetCell(3, 1, "3"));
+        SpreadsheetRow row4 = new SpreadsheetRow(4);
+        row4.addCell(new SpreadsheetCell(4, 1, "4"));
+        SpreadsheetRow row5 = new SpreadsheetRow(5);
+        row5.addCell(new SpreadsheetCell(5, 1, "5"));
+
+        spreadsheetService.evaluateAllFormulas(List.of(row1, row2, row3, row4, row5));
+
+        Object value = formulaCell.getValue();
+        assertEquals(2.0, value); //not existing cell val + 2 -> "" (0) + 2 = 2
     }
 
 

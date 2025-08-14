@@ -14,12 +14,19 @@ public class CellReferenceArgument implements FunctionArgument {
     @Override
     public double asDouble() {
         String value = asText();
+        if(value.isBlank()) {
+            return 0;
+        }
         return Double.parseDouble(value);
     }
 
     @Override
     public String asText() {
-        return asObject().toString();
+        Object object = asObject();
+        if (object == null) {
+            return "";
+        }
+        return object.toString();
     }
 
     @Override

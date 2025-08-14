@@ -12,6 +12,7 @@ import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,16 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         }
 
         return null;
+    }
+
+    private List<FunctionArgument> getFunctionArgumentsForColonSeparator(String[] splitColon, List<FunctionArgument> functionArguments) {
+        String arg1 = splitColon[0].replace("=", "").replace("+", "").replace("(", "").trim();
+        String arg2 = splitColon[1].replace(")", "").trim();
+        FunctionArgument argument1 = functionArguments.stream().filter(e -> Objects.equals(((CellReferenceArgument) e).getCell().getCellId(), arg1)).findFirst().get();
+        Optional<FunctionArgument> arg2Optional = functionArguments.stream().filter(e -> Objects.equals(((CellReferenceArgument) e).getCell().getCellId(), arg2)).findFirst();
+        //second parameter can be bigger than amount of rows ex: (B2:B100)
+        functionArguments = arg2Optional.map(functionArgument -> List.of(argument1, functionArgument)).orElseGet(() -> List.of(argument1));
+        return functionArguments;
     }
 
     @Override
@@ -132,7 +143,14 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
             for (SpreadsheetCell cell : row.getCells()) {
                 if (cell.hasFormula()) {
                     String formula = cell.getFormula();
-                    for (FunctionArgument argument : getFunctionArguments(rows, formula)) {
+                    List<FunctionArgument> functionArguments = getFunctionArguments(rows, formula);
+
+                    String[] splitColon = formula.split(":");
+                    if (splitColon.length == 2) {
+                        functionArguments = getFunctionArgumentsForColonSeparator(splitColon, functionArguments);
+                    }
+
+                    for (FunctionArgument argument : functionArguments) {
                         if (argument instanceof CellReferenceArgument) {
                             SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
                             String oldCellId = cellInFormula.getCellId();
@@ -148,8 +166,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                                     columnNumber++;
                                 }
                             }
-                            String newCellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
-                            formula = formula.replaceAll(oldCellId, newCellId);
+                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber);
                         }
                     }
                     cell.setNewValueAndCellRelatedFields(formula);
@@ -190,6 +207,50 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         }
     }
 
+    /* deprecated */
+    public void moveRowsInFormulasToEnsureBackwardCompatibility(List<SpreadsheetRow> rows) { //old row = 0 -> new row = 1
+        //first update formulas
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.hasFormula()) {
+                    String formula = cell.getFormula();
+                    List<FunctionArgument> functionArguments = getFunctionArguments(rows, formula);
+
+                    String[] splitColon = formula.split(":");
+                    if (splitColon.length == 2) {
+                        functionArguments = getFunctionArgumentsForColonSeparator(splitColon, functionArguments);
+                    }
+                    for (FunctionArgument argument : functionArguments) {
+                        formula = updateFormula(formula, argument);
+                    }
+                    cell.setNewValueAndCellRelatedFields(formula);
+                }
+            }
+        }
+    }
+
+    private String updateFormula(String formula, FunctionArgument argument) {
+        if (argument instanceof CellReferenceArgument) {
+            SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
+            String oldCellId = cellInFormula.getCellId();
+            int columnNumber = cellInFormula.getColumnNumber();
+            int rowNumber = cellInFormula.getRowNumber();
+            rowNumber++;
+            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber);
+        }
+        return formula;
+    }
+
+    @NotNull
+    private String updateFormula(String formula, String oldCellId, int columnNumber, int rowNumber) {
+        String newCellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
+        formula = formula.replaceAll(oldCellId + ",", newCellId + ","); //to prevent replacing in (B11,B1) -> B1 to B2
+        formula = formula.replaceAll(oldCellId + "\\)", newCellId + ")");
+        formula = formula.replaceAll(oldCellId + " ", newCellId + " ");
+        formula = formula.replaceAll(oldCellId + ":", newCellId + ":");
+        return formula;
+    }
+
     public void deleteColumn(List<SpreadsheetRow> rows, int refColumnNumber) {
         //first update formulas
         for (SpreadsheetRow row : rows) {
@@ -206,8 +267,7 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
                             if (columnNumber > refColumnNumber) {
                                 columnNumber--;
                             }
-                            String newCellId = SpreadsheetUtils.getColumnHeader(columnNumber) + rowNumber;
-                            formula = formula.replaceAll(oldCellId, newCellId);
+                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber);
                         }
                     }
                     cell.setNewValueAndCellRelatedFields(formula);

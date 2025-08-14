@@ -1,14 +1,12 @@
 package com.bervan.spreadsheet.functions;
 
+import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -102,8 +100,9 @@ public class FormulaParser {
 
                 if (startRowNumberFromColumn == endRowNumberFromColumn) {
                     //1 row - multiple columns
+                    int maxColumn = rows.get(0).getCells().stream().max(Comparator.comparingInt(SpreadsheetCell::getColumnNumber)).get().getColumnNumber();
                     List<FunctionArgument> functionArguments = new ArrayList<>();
-                    for (int i = startColumnNumber; i <= endColumnNumber; i++) {
+                    for (int i = startColumnNumber; i <= Math.min(maxColumn, endColumnNumber); i++) {
                         functionArguments.add(toArgument(SpreadsheetUtils.getColumnHeader(i) + startRowNumberFromColumn, rows));
                     }
                     return functionArguments;
@@ -113,7 +112,8 @@ public class FormulaParser {
                         throw new RuntimeException("Parse Arguments failed for: " + argsString + ". Incorrect colon expression");
                     }
                     List<FunctionArgument> functionArguments = new ArrayList<>();
-                    for (int i = startRowNumberFromColumn; i <= endRowNumberFromColumn; i++) {
+                    int maxRow = rows.size();
+                    for (int i = startRowNumberFromColumn; i <= Math.min(maxRow, endRowNumberFromColumn); i++) {
                         functionArguments.add(toArgument(startColumnHeader + i, rows));
                     }
                     return functionArguments;
@@ -132,7 +132,16 @@ public class FormulaParser {
 
     private FunctionArgument toArgument(String raw, List<SpreadsheetRow> rows) {
         if (raw.matches("[A-Z]+\\d+")) {
-            return cellResolver.resolve(raw, rows); // ex. "A1"
+            try {
+                return cellResolver.resolve(raw, rows); // ex. "A1"
+            } catch (IllegalArgumentException e) {
+                //create empty argument
+                log.warn("Cell {} is not present. Default empty virtual cell is created.", raw);
+                return new ConstantArgument("");
+            } catch (Exception e) {
+                log.error("Failed to resolve cell: " + raw, e);
+                throw e;
+            }
         }
 
         try {

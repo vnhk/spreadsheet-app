@@ -10,6 +10,7 @@ import com.bervan.spreadsheet.service.SpreadsheetService;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.button.Button;
@@ -385,15 +386,51 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             try {
                 return getSpreadsheetRows(body);
             } catch (JsonProcessingException e) {
-                log.error("Failed to parse spreadsheet body!", e);
-                showErrorNotification("Failed to retrieve spreadsheet body! Check text area below.");
-                infoTextArea.setValue(body);
-                infoTextArea.setLabel("Body:");
-                infoTextArea.setVisible(true);
+                try {
+                    /* deprecated */
+                    return tryBackwardCompatibility(body);
+                } catch (JsonProcessingException innerE) {
+                    log.error("Failed to parse spreadsheet body!", e);
+                    showErrorNotification("Failed to retrieve spreadsheet body! Check text area below.");
+                    infoTextArea.setValue(body);
+                    infoTextArea.setLabel("Body:");
+                    infoTextArea.setVisible(true);
+                }
+
             }
         }
 
         return new ArrayList<>();
+    }
+
+    private List<SpreadsheetRow> tryBackwardCompatibility(String body) throws JsonProcessingException {
+        List<SpreadsheetRow> result = new ArrayList<>();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(body);
+
+        int i = 0;
+        for (JsonNode rowArray : root) {
+            i++;
+            SpreadsheetRow row = new SpreadsheetRow(i);
+            for (JsonNode cell : rowArray) {
+                int colNum = cell.get("columnNumber").asInt() + 1;
+                int rowNum = cell.get("rowNumber").asInt() + 1;
+                if (rowNum != i) {
+                    showErrorNotification("Data malformed. Backward Compatibility is invalid. Make sure data displays correctly!");
+                }
+
+                // If functionValue != null, it's function - use it instead of value
+                String value = cell.hasNonNull("functionValue")
+                        ? cell.get("functionValue").asText()
+                        : cell.get("value").asText();
+
+                row.getCells().add(new SpreadsheetCell(rowNum, colNum, value));
+            }
+            result.add(row);
+        }
+
+        spreadsheetService.moveRowsInFormulasToEnsureBackwardCompatibility(result);
+        return result;
     }
 
     private Spreadsheet getOrCreate(String spreadsheetName) {

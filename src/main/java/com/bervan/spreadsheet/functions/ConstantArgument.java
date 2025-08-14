@@ -13,7 +13,11 @@ public class ConstantArgument implements FunctionArgument {
     @Override
     public double asDouble() {
         try {
-            return Double.parseDouble(asText());
+            String text = asText();
+            if (text.isBlank()) {
+                return 0;
+            }
+            return Double.parseDouble(text);
         } catch (Exception e) {
             log.error("Value cannot be parsed to double: {}", asText());
             throw e;
@@ -22,6 +26,9 @@ public class ConstantArgument implements FunctionArgument {
 
     @Override
     public String asText() {
+        if (value == null) {
+            return "";
+        }
         return String.valueOf(value);
     }
 
