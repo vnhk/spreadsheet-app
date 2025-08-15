@@ -358,6 +358,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     // Adds the row number (1-based index) to the beginning of the row
     private void addRowNumbersAsFirstColumn(int rowIndex, Element tr) {
         Element rowNumberCell = new Element("th");
+        rowNumberCell.getClassList().add("spreadsheet-row-header");
+
         rowNumberCell.setText(String.valueOf(rowIndex + 1));
         rowNumberCell.getStyle()
                 .set("border", "1px solid #ccc")
