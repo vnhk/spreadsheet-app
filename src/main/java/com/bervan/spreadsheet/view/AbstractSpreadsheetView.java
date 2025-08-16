@@ -249,6 +249,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         actionPanel.setWidthFull();
         actionPanel.getStyle().set("position", "sticky")
                 .set("top", "0")
+                .set("left", "0")
                 .set("background", "white")
                 .set("z-index", "10");
         return actionPanel;
