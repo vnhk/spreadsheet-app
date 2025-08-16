@@ -8,7 +8,10 @@ import com.vaadin.flow.dom.Element;
 import java.util.List;
 
 public class HtmlSpreadsheet extends Div {
-    public HtmlSpreadsheet(List<SpreadsheetRow> rows) {
+    private final Element parentElement;
+
+    public HtmlSpreadsheet(List<SpreadsheetRow> rows, Element parentElement) {
+        this.parentElement = parentElement;
         Element table = new Element("table");
         table.setAttribute("class", "spreadsheet-table");
 
@@ -103,6 +106,7 @@ public class HtmlSpreadsheet extends Div {
             editableDiv.getElement().setAttribute("contenteditable", "true");
             editableDiv.getElement().setAttribute("data-formula", cell.getFormula() != null ? cell.getFormula() : "");
             editableDiv.getElement().setAttribute("data-value", String.valueOf(cell.getValue()));
+            editableDiv.getElement().setAttribute("data-cell-id", cell.getCellId());
             editableDiv.getStyle()
                     .set("min-width", "50px")
                     .set("padding", "4px");
@@ -130,7 +134,7 @@ public class HtmlSpreadsheet extends Div {
                                     div.textContent = div.dataset.value;
                                 }
                             });
-                            """, getElement());
+                            """, parentElement);
 
             td.appendChild(editableDiv.getElement());
             tr.appendChild(td);

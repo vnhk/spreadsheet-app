@@ -215,7 +215,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private HtmlSpreadsheet createHTMLTable(List<SpreadsheetRow> rows) {
-        return new HtmlSpreadsheet(rows);
+        return new HtmlSpreadsheet(rows, getElement());
     }
 
     private VerticalLayout createSpreadsheetLayout(List<SpreadsheetRow> rows) {
@@ -276,6 +276,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private Button getSaveOptButton() {
         Button save = new Button("Save", event -> {
             save();
+            showSuccessNotification("Spreadsheet saved!");
         });
         save.addClassName("spreadsheet-action-button");
 
