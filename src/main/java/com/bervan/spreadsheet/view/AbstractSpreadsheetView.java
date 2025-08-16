@@ -129,8 +129,77 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private void deleteColumnConfirmed(Integer columnNumber) {
         spreadsheetService.deleteColumn(rows, columnNumber);
         refreshView(rows);
-        showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " deleted!");
+        showPrimaryNotification("Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " deleted!");
     }
+
+    @ClientCallable
+    public void addRowAbove(Integer rowNumber) {
+        spreadsheetService.addRowAbove(rows, null, rowNumber);
+        refreshView(rows);
+        showPrimaryNotification(" Row " + rowNumber + " added!");
+    }
+
+    @ClientCallable
+    public void addRowBelow(Integer rowNumber) {
+        spreadsheetService.addRowBelow(rows, null, rowNumber);
+        refreshView(rows);
+        showPrimaryNotification(" Row " + (rowNumber + 1) + " added!");
+    }
+
+    @ClientCallable
+    public void duplicateRow(Integer rowNumber) {
+        spreadsheetService.duplicateRow(rows, rowNumber);
+        refreshView(rows);
+        showPrimaryNotification(" Row " + (rowNumber + 1) + " duplicated!");
+    }
+
+    @ClientCallable
+    public void deleteRow(Integer rowNumber) {
+        StringBuilder confirmationMessageDetails = new StringBuilder();
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                //collect all formulas except formulas in row with rowNumber
+                if (cell.hasFormula() && cell.getColumnNumber() != rowNumber) {
+                    List<FunctionArgument> functionArguments = spreadsheetService.getFunctionArguments(rows, cell.getFormula());
+                    Set<FunctionArgument> formulasThatUseRowToBeDeleted = functionArguments.stream().filter(e -> e instanceof CellReferenceArgument)
+                            .filter(e -> ((CellReferenceArgument) e).getCell().getRowNumber() == rowNumber)
+                            .collect(Collectors.toSet());
+                    if (!formulasThatUseRowToBeDeleted.isEmpty()) {
+                        confirmationMessageDetails.append(" ").append(cell.getCellId());
+                    }
+                }
+            }
+        }
+
+        if (!confirmationMessageDetails.isEmpty()) {
+            ConfirmDialog confirmDialog = new ConfirmDialog();
+            confirmDialog.setHeader("Row " + rowNumber);
+            confirmDialog.setText("Are you sure you want to delete this row? It contains cells used in other formulas: "
+                    + confirmationMessageDetails);
+
+            confirmDialog.setConfirmText("Delete Row: " + rowNumber);
+            confirmDialog.setConfirmButtonTheme("error primary");
+            confirmDialog.addConfirmListener(event -> {
+                deleteRowConfirmed(rowNumber);
+            });
+
+            confirmDialog.setCancelText("Cancel");
+            confirmDialog.setCancelable(true);
+            confirmDialog.addCancelListener(event -> {
+            });
+
+            confirmDialog.open();
+        } else {
+            deleteRowConfirmed(rowNumber);
+        }
+    }
+
+    private void deleteRowConfirmed(Integer rowNumber) {
+        spreadsheetService.deleteRow(rows, rowNumber);
+        refreshView(rows);
+        showPrimaryNotification("Row " + rowNumber + " deleted!");
+    }
+
 
     @Override
     public void setParameter(BeforeEvent event, String s) {

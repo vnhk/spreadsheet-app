@@ -124,12 +124,123 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         }
     }
 
+    public void duplicateRow(List<SpreadsheetRow> rows, int refRowNumber) {
+        addRowBelow(rows, null, refRowNumber);
+        SpreadsheetRow newRow = rows.get(refRowNumber);
+        SpreadsheetRow oldRow = rows.get(refRowNumber - 1);
+        for (int i = 0; i < oldRow.getCells().size(); i++) {
+            SpreadsheetCell newCell = newRow.getCell(i);
+            SpreadsheetCell oldCell = oldRow.getCell(i);
+            if (oldCell.hasFormula()) {
+                newCell.setNewValueAndCellRelatedFields(oldCell.getFormula());
+            } else {
+                newCell.setNewValueAndCellRelatedFields(oldCell.getValue());
+            }
+        }
+    }
+
+    public void addRowAbove(List<SpreadsheetRow> rows, List<Object> values, int refRowNumber) {
+        addRowAboveOrBelow(rows, values, refRowNumber, false);
+    }
+
+    public void addRowBelow(List<SpreadsheetRow> rows, List<Object> values, int refRowNumber) {
+        addRowAboveOrBelow(rows, values, refRowNumber, true);
+    }
+
     public void addColumnLeft(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber) {
         addColumnOnLeftOrRight(rows, values, refColumnNumber, false);
     }
 
     public void addColumnRight(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber) {
         addColumnOnLeftOrRight(rows, values, refColumnNumber, true);
+    }
+
+    private void addRowAboveOrBelow(List<SpreadsheetRow> rows, List<Object> values, int refRowNumber, boolean addRowBelow) {
+        if (values != null && !values.isEmpty() && values.size() != rows.size()) {
+            throw new IllegalArgumentException("Size of values does not match amount of rows.");
+        }
+        // values can be null or empty and then cells value will be empty
+
+        //first update formulas
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.hasFormula()) {
+                    String formula = cell.getFormula();
+                    List<FunctionArgument> functionArguments = getFunctionArguments(rows, formula);
+
+                    String[] splitColon = formula.split(":");
+                    if (splitColon.length == 2) {
+                        functionArguments = getFunctionArgumentsForColonSeparator(splitColon, functionArguments);
+                    }
+
+                    Map<String, String> replacedFormulaCells = new HashMap<>();
+                    for (FunctionArgument argument : functionArguments) {
+                        if (argument instanceof CellReferenceArgument) {
+                            SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
+                            String oldCellId = cellInFormula.getCellId();
+                            int columnNumber = cellInFormula.getColumnNumber();
+                            int rowNumber = cellInFormula.getRowNumber();
+
+                            if (addRowBelow) {
+                                if (rowNumber > refRowNumber) {
+                                    rowNumber++;
+                                }
+                            } else {
+                                if (rowNumber >= refRowNumber) {
+                                    rowNumber++;
+                                }
+                            }
+                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber, replacedFormulaCells);
+                        }
+                    }
+                    useReplacedCellsMappingToUpdateFormula(cell, replacedFormulaCells, formula);
+                }
+            }
+        }
+
+        //then update rowNumbers
+        for (SpreadsheetRow row : rows) {
+            if (addRowBelow) {
+                if (row.rowNumber > refRowNumber) {
+                    row.rowNumber++;
+                    row.getCells().forEach(e -> e.updateRowNumber(row.rowNumber));
+                }
+            } else {
+                if (row.rowNumber >= refRowNumber) {
+                    row.rowNumber++;
+                    row.getCells().forEach(e -> e.updateRowNumber(row.rowNumber));
+                }
+            }
+        }
+
+        //update rows with new row
+        List<SpreadsheetCell> cells = rows.get(0).getCells();
+        SpreadsheetRow newRow = new SpreadsheetRow();
+        if (addRowBelow) {
+            newRow.rowNumber = refRowNumber + 1;
+            int i = 0;
+            for (SpreadsheetCell cell : cells) {
+                if (values == null || values.isEmpty()) {
+                    newRow.addCell(new SpreadsheetCell(newRow.rowNumber, cell.getColumnNumber(), ""));
+                } else {
+                    newRow.addCell(new SpreadsheetCell(newRow.rowNumber, cell.getColumnNumber(), values.get(i)));
+                }
+                i++;
+            }
+            rows.add(refRowNumber, newRow);
+        } else {
+            newRow.rowNumber = refRowNumber;
+            int i = 0;
+            for (SpreadsheetCell cell : cells) {
+                if (values == null || values.isEmpty()) {
+                    newRow.addCell(new SpreadsheetCell(newRow.rowNumber, cell.getColumnNumber(), ""));
+                } else {
+                    newRow.addCell(new SpreadsheetCell(newRow.rowNumber, cell.getColumnNumber(), values.get(i)));
+                }
+                i++;
+            }
+            rows.add(refRowNumber - 1, newRow);
+        }
     }
 
     private void addColumnOnLeftOrRight(List<SpreadsheetRow> rows, List<Object> values, int refColumnNumber, boolean addColumnOnRight) {
@@ -320,6 +431,45 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
 
                 if (cell.getColumnNumber() >= refColumnNumber) {
                     cell.updateColumnNumber(cell.getColumnNumber() - 1);
+                }
+            }
+        }
+    }
+
+    public void deleteRow(List<SpreadsheetRow> rows, int refRowNumber) {
+        //first update formulas
+        for (SpreadsheetRow row : rows) {
+            for (SpreadsheetCell cell : row.getCells()) {
+                if (cell.hasFormula()) {
+                    String formula = cell.getFormula();
+                    Map<String, String> replacedFormulaCells = new HashMap<>();
+                    for (FunctionArgument argument : getFunctionArguments(rows, formula)) {
+                        if (argument instanceof CellReferenceArgument) {
+                            SpreadsheetCell cellInFormula = ((CellReferenceArgument) argument).getCell();
+                            String oldCellId = cellInFormula.getCellId();
+                            int columnNumber = cellInFormula.getColumnNumber();
+                            int rowNumber = cellInFormula.getRowNumber();
+
+                            if (rowNumber > refRowNumber) {
+                                rowNumber--;
+                            }
+                            formula = updateFormula(formula, oldCellId, columnNumber, rowNumber, replacedFormulaCells);
+                        }
+                    }
+                    useReplacedCellsMappingToUpdateFormula(cell, replacedFormulaCells, formula);
+                }
+            }
+        }
+
+        //delete row with given ref row number
+        rows.removeIf(e -> e.rowNumber == refRowNumber);
+
+        //then update columnNumbers
+        for (int i = 0; i < rows.size(); i++) {
+            rows.get(i).rowNumber = i + 1;
+            for (SpreadsheetCell cell : rows.get(i).getCells()) {
+                if (cell.getRowNumber() >= refRowNumber) {
+                    cell.updateRowNumber(cell.getRowNumber() - 1);
                 }
             }
         }

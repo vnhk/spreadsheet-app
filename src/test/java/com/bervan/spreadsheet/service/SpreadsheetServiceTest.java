@@ -31,6 +31,42 @@ class SpreadsheetServiceTest {
             )
     );
 
+    public static void printSpreadsheet(List<SpreadsheetRow> rows) {
+        if (rows == null || rows.isEmpty()) {
+            System.out.println("Spreadsheet is empty");
+            return;
+        }
+
+        int maxCols = rows.stream()
+                .mapToInt(r -> r.getCells().size())
+                .max()
+                .orElse(0);
+
+        System.out.print("Row\t");
+        for (int col = 0; col < maxCols; col++) {
+            System.out.print(getColumnLetter(col) + "\t");
+        }
+        System.out.println();
+
+        for (SpreadsheetRow row : rows) {
+            System.out.print(row.rowNumber + "\t");
+            for (SpreadsheetCell cell : row.getCells()) {
+                String display = cell.getValue() != null ? cell.getValue().toString() : "";
+                System.out.print(display + "\t");
+            }
+            System.out.println();
+        }
+    }
+
+    private static String getColumnLetter(int columnIndex) {
+        StringBuilder column = new StringBuilder();
+        while (columnIndex >= 0) {
+            column.insert(0, (char) ('A' + (columnIndex % 26)));
+            columnIndex = columnIndex / 26 - 1;
+        }
+        return column.toString();
+    }
+
     @Test
     void colonSeparatedSumFunction_1row() {
         SpreadsheetRow row = new SpreadsheetRow(1);
@@ -112,7 +148,6 @@ class SpreadsheetServiceTest {
         assertEquals(2.0, value); //not existing cell val + 2 -> "" (0) + 2 = 2
     }
 
-
     @Test
     void addColumnLeft() {
         int refColumnNumber = 2;
@@ -148,6 +183,168 @@ class SpreadsheetServiceTest {
         assertEquals(row.getCells().get(6).getCellId(), "G1");
     }
 
+    @Test
+    void addRowBelow() {
+        int refRowNumber = 2;
+        List<Object> values = new ArrayList<>();
+        List<SpreadsheetRow> rows = new ArrayList<>();
+
+        // row 1
+        SpreadsheetRow row1 = new SpreadsheetRow(1);
+        SpreadsheetCell cell1 = new SpreadsheetCell(1, 1, "=+(A2,B3)"); // A1
+        SpreadsheetCell cell2 = new SpreadsheetCell(1, 2, "=+(C3,5)");  // B1
+        row1.addCell(cell1, cell2);
+        rows.add(row1);
+
+        // row 2
+        SpreadsheetRow row2 = new SpreadsheetRow(2);
+        SpreadsheetCell cell3 = new SpreadsheetCell(2, 1, "=+(A1,B2)"); // A2
+        SpreadsheetCell cell4 = new SpreadsheetCell(2, 2, "=+(C3,5)");  // B2
+        row2.addCell(cell3, cell4);
+        rows.add(row2);
+
+        spreadsheetService.addRowBelow(rows, values, refRowNumber);
+
+        // row1 formulas updated: only refs >2 are shifted
+        assertEquals("=+(A2,B4)", row1.getCells().get(0).getFormula()); // B3->B4
+        assertEquals("=+(C4,5)", row1.getCells().get(1).getFormula());  // C3->C4
+
+        // row2 stays with same references (because it's refRowNumber)
+        assertEquals("=+(A1,B2)", row2.getCells().get(0).getFormula());
+        assertEquals("=+(C4,5)", row2.getCells().get(1).getFormula());
+
+        // new row 3 should be empty
+        SpreadsheetRow newRow3 = rows.get(2);
+        assertNull(newRow3.getCells().get(0).getFormula());
+        assertEquals("", newRow3.getCells().get(0).getValue());
+
+        // old row3 becomes row4, references updated
+
+        // check IDs
+        assertEquals("A1", row1.getCells().get(0).getCellId());
+        assertEquals("B1", row1.getCells().get(1).getCellId());
+
+        assertEquals("A2", row2.getCells().get(0).getCellId());
+        assertEquals("B2", row2.getCells().get(1).getCellId());
+
+        assertEquals("A3", newRow3.getCells().get(0).getCellId());
+        assertEquals("B3", newRow3.getCells().get(1).getCellId());
+    }
+
+    @Test
+    void addRowAbove() {
+        int refRowNumber = 2;
+        List<Object> values = new ArrayList<>();
+        List<SpreadsheetRow> rows = new ArrayList<>();
+
+        // row 1
+        SpreadsheetRow row1 = new SpreadsheetRow(1);
+        SpreadsheetCell cell1 = new SpreadsheetCell(1, 1, "=+(A2,B3)"); // A1
+        SpreadsheetCell cell2 = new SpreadsheetCell(1, 2, "=+(C2,5)");  // B1
+        row1.addCell(cell1, cell2);
+        rows.add(row1);
+
+        // row 2
+        SpreadsheetRow row2 = new SpreadsheetRow(2);
+        SpreadsheetCell cell3 = new SpreadsheetCell(2, 1, "=+(A1,B2)"); // A2
+        SpreadsheetCell cell4 = new SpreadsheetCell(2, 2, "=+(C3,5)");  // B2
+        row2.addCell(cell3, cell4);
+        rows.add(row2);
+
+        spreadsheetService.addRowAbove(rows, values, refRowNumber);
+
+        // check row 1 formulas updated
+        assertEquals("=+(A3,B4)", row1.getCells().get(0).getFormula()); // A2->A3, B3->B4
+        assertEquals("=+(C3,5)", row1.getCells().get(1).getFormula());  // C2->C3
+
+        // new row 2 should be empty
+        SpreadsheetRow newRow2 = rows.get(1);
+        assertNull(newRow2.getCells().get(0).getFormula());
+        assertEquals("", newRow2.getCells().get(0).getValue());
+
+        // old row2 becomes row3, references updated
+        SpreadsheetRow shiftedRow = rows.get(2);
+        assertEquals("=+(A1,B3)", shiftedRow.getCells().get(0).getFormula()); // B2->B3
+        assertEquals("=+(C4,5)", shiftedRow.getCells().get(1).getFormula());  // C3->C4
+
+        // check IDs
+        assertEquals("A1", row1.getCells().get(0).getCellId());
+        assertEquals("B1", row1.getCells().get(1).getCellId());
+
+        assertEquals("A2", newRow2.getCells().get(0).getCellId());
+        assertEquals("B2", newRow2.getCells().get(1).getCellId());
+
+        assertEquals("A3", shiftedRow.getCells().get(0).getCellId());
+        assertEquals("B3", shiftedRow.getCells().get(1).getCellId());
+    }
+
+    @Test
+    void duplicateRowAndDelete() {
+        int refRowNumber = 2;
+        List<SpreadsheetRow> rows = new ArrayList<>();
+
+        // row 1
+        SpreadsheetRow row1 = new SpreadsheetRow(1);
+        SpreadsheetCell cell1 = new SpreadsheetCell(1, 1, "=+(A2,B2)"); // A1
+        SpreadsheetCell cell2 = new SpreadsheetCell(1, 2, "=+(C2,5)");  // B1
+        row1.addCell(cell1, cell2);
+        rows.add(row1);
+
+        // row 2
+        SpreadsheetRow row2 = new SpreadsheetRow(2);
+        SpreadsheetCell cell3 = new SpreadsheetCell(2, 1, "=+(A1,B2)"); // A2
+        SpreadsheetCell cell4 = new SpreadsheetCell(2, 2, "=+(C3,5)");  // B2
+        row2.addCell(cell3, cell4);
+        rows.add(row2);
+
+        // row 3
+        SpreadsheetRow row3 = new SpreadsheetRow(3);
+        SpreadsheetCell cell5 = new SpreadsheetCell(3, 1, "=+(A2,B3)"); // A3
+        SpreadsheetCell cell6 = new SpreadsheetCell(3, 2, "=+(C2,5)");  // B3
+        row3.addCell(cell5, cell6);
+        rows.add(row3);
+
+        printSpreadsheet(rows);
+        spreadsheetService.duplicateRow(rows, refRowNumber);
+        printSpreadsheet(rows);
+
+        // row1 updated (refs to > 2 shift down)
+        assertEquals("=+(A2,B2)", row1.getCells().get(0).getFormula());
+        assertEquals("=+(C2,5)", row1.getCells().get(1).getFormula());
+
+        // duplicated row (row2 copy becomes new row3)
+        SpreadsheetRow duplicatedRow = rows.get(2);
+        assertEquals("A3", duplicatedRow.getCells().get(0).getCellId());
+        assertEquals("=+(A1,B2)", duplicatedRow.getCells().get(0).getFormula());
+        assertEquals("B3", duplicatedRow.getCells().get(1).getCellId());
+        assertEquals("=+(C4,5)", duplicatedRow.getCells().get(1).getFormula());
+
+        // old row3 shifted to row4
+        SpreadsheetRow shiftedRow = rows.get(3);
+        assertEquals("A4", shiftedRow.getCells().get(0).getCellId());
+        assertEquals("=+(A2,B4)", shiftedRow.getCells().get(0).getFormula());
+        assertEquals("B4", shiftedRow.getCells().get(1).getCellId());
+        assertEquals("=+(C2,5)", shiftedRow.getCells().get(1).getFormula());
+
+        // now delete the duplicated row
+        spreadsheetService.deleteRow(rows, refRowNumber);
+
+        // after delete we should be back to original
+        assertEquals("=+(A2,B2)", row1.getCells().get(0).getFormula());
+        assertEquals("=+(C2,5)", row1.getCells().get(1).getFormula());
+
+        SpreadsheetRow restoredRow2 = rows.get(1);
+        assertEquals("A2", restoredRow2.getCells().get(0).getCellId());
+        assertEquals("=+(A1,B2)", restoredRow2.getCells().get(0).getFormula());
+        assertEquals("B2", restoredRow2.getCells().get(1).getCellId());
+        assertEquals("=+(C3,5)", restoredRow2.getCells().get(1).getFormula());
+
+        SpreadsheetRow restoredRow3 = rows.get(2);
+        assertEquals("A3", restoredRow3.getCells().get(0).getCellId());
+        assertEquals("=+(A2,B3)", restoredRow3.getCells().get(0).getFormula());
+        assertEquals("B3", restoredRow3.getCells().get(1).getCellId());
+        assertEquals("=+(C2,5)", restoredRow3.getCells().get(1).getFormula());
+    }
 
     @Test
     void duplicateColumnAndDelete() {
@@ -248,7 +445,6 @@ class SpreadsheetServiceTest {
         assertEquals(row.getCells().get(6).getCellId(), "G1");
         assertEquals(row.getCells().get(6).getFormula(), "=+(A1,5)");
     }
-
 
     @Test
     void evaluateAllFormulas() {
@@ -522,5 +718,4 @@ class SpreadsheetServiceTest {
         }
         return column.toString();
     }
-
 }

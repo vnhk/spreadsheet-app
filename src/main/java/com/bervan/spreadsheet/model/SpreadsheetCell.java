@@ -87,6 +87,11 @@ public class SpreadsheetCell {
         this.cellId = calcCellId();
     }
 
+    public void updateRowNumber(int rowNumber) {
+        this.rowNumber = rowNumber;
+        this.cellId = calcCellId();
+    }
+
     public enum CellType {
         TEXT,
         NUMBER,

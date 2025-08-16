@@ -137,7 +137,7 @@ public class FormulaParser {
             } catch (IllegalArgumentException e) {
                 //create empty argument
                 log.warn("Cell {} is not present. Default empty virtual cell is created.", raw);
-                return new ConstantArgument("");
+                return new CellReferenceArgument(new SpreadsheetCell(SpreadsheetUtils.getRowNumberFromColumn(raw), SpreadsheetUtils.getColumnNumber(SpreadsheetUtils.getColumnHeader(raw)), ""));
             } catch (Exception e) {
                 log.error("Failed to resolve cell: " + raw, e);
                 throw e;
