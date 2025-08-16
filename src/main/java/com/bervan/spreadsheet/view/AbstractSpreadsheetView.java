@@ -221,34 +221,36 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Element table = new Element("table");
         table.setAttribute("class", "spreadsheet-table");
 
-        // Create the first row with column headers
-        Element headerRow = new Element("tr");
+        table.getStyle()
+                .set("border-collapse", "collapse")
+                .set("width", "max-content");
 
-        // Top-left corner cell (empty, for alignment with row numbers)
+        // Create header row
+        Element headerRow = new Element("tr");
         Element emptyHeader = new Element("th");
-        emptyHeader.getStyle().set("border", "1px solid white").set("padding", "5px");
+        emptyHeader.getStyle().set("border", "1px solid gray").set("padding", "5px").set("min-width", "50px");
         headerRow.appendChild(emptyHeader);
 
         if (!rows.isEmpty()) {
-            addColumnHeaders(rows, headerRow); // Add column labels: A, B, C...
+            addColumnHeaders(rows, headerRow);
         }
-
         table.appendChild(headerRow);
 
-        // Add each data row
+        // Add data rows
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             SpreadsheetRow row = rows.get(rowIndex);
             Element tr = new Element("tr");
-
-            addRowNumbersAsFirstColumn(rowIndex, tr); // Add row number (1, 2, 3...)
-
-            addEditableInputCells(row, tr); // Add editable <input> elements for each cell
-
+            addRowNumbersAsFirstColumn(rowIndex, tr);
+            addEditableInputCells(row, tr);
             table.appendChild(tr);
         }
 
-        // Wrap the table in a Vaadin Div component
+        // Wrap table in scrollable div
         Div div = new Div();
+        div.getStyle()
+                .set("overflow", "auto")   // enables both horizontal and vertical scrolling
+                .set("border", "1px solid lightgray");
+
         div.getElement().appendChild(table);
         return div;
     }
@@ -278,11 +280,15 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             td.getStyle().set("border", "1px solid #ccc").set("padding", "5px");
 
             Input input = new Input();
-            input.getElement().getStyle().set("width", "100%");
+            input.getElement().getStyle();
+            input.getStyle()
+                    .set("min-width", "50px")
+                    .set("padding", "4px");
 
             if (cell.hasFormula()) {
                 // Different text color for formula cells
-                input.getElement().getStyle().set("color", "blue");
+                input.getElement().getStyle().set("color", "#82CAFF");
+                input.getElement().getStyle().set("background", "#1B263B");
             }
 
             input.getElement().executeJs(
@@ -320,27 +326,65 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         layout.setPadding(true);
         layout.setSpacing(true);
 
-        // Toolbar
+        HorizontalLayout actionPanel = getToolbarPanel();
+        Button addRowBtn = getAddRowOptBtn(rows);
+        Button addColumnBtn = getAddColumnOptBtn(rows);
+        Button save = getSaveOptButton();
+        Button importData = getImportDataOptButton();
+        Button exportData = getExportOptButton();
+
+        Div gap = new Div();
+        gap.setWidth("10px");
+        actionPanel.add(addRowBtn, addColumnBtn, save, gap, importData, exportData);
+
+        Div tableDiv = createHTMLTable(rows);
+        tableDiv.getElement().executeJs("initContextMenu($0)", getElement());
+
+        layout.add(actionPanel, tableDiv);
+        layout.setFlexGrow(1, tableDiv);
+        layout.setSizeFull();
+        return layout;
+    }
+
+    private HorizontalLayout getToolbarPanel() {
         HorizontalLayout actionPanel = new HorizontalLayout();
         actionPanel.addClassName("spreadsheet-action-panel");
+        actionPanel.setWidthFull();
+        actionPanel.getStyle().set("position", "sticky")
+                .set("top", "0")
+                .set("background", "white")
+                .set("z-index", "10");
+        return actionPanel;
+    }
 
+    private Button getAddRowOptBtn(List<SpreadsheetRow> rows) {
         Button addRowBtn = new Button("Add Row", event -> {
             addRow(rows);
             showPrimaryNotification("Row " + (rows.size()) + " added");
         });
         addRowBtn.addClassName("spreadsheet-action-button");
+        return addRowBtn;
+    }
 
+    private Button getAddColumnOptBtn(List<SpreadsheetRow> rows) {
         Button addColumnBtn = new Button("Add Column", event -> {
             addColumn(rows);
             showPrimaryNotification("Column " + SpreadsheetUtils.getColumnHeader(rows.get(0).getCells().size() + 1) + " added");
         });
         addColumnBtn.addClassName("spreadsheet-action-button");
+        return addColumnBtn;
+    }
 
+    private Button getSaveOptButton() {
         Button save = new Button("Save", event -> {
             save();
         });
         save.addClassName("spreadsheet-action-button");
 
+        return save;
+    }
+
+    private Button getImportDataOptButton() {
         Button importData = new Button("Import", event -> {
             TextArea textArea = new TextArea();
             textArea.setLabel("Data:");
@@ -368,8 +412,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             });
         });
         importData.addClassName("spreadsheet-action-button");
+        return importData;
+    }
 
-        Button exportData = new Button("Export", event -> {
+    private Button getExportOptButton() {
+        Button export = new Button("Export", event -> {
             String body = getOrCreate(spreadsheet.getName()).getBody();
             Dialog dialog = new Dialog();
             TextArea textArea = new TextArea(body);
@@ -380,17 +427,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             dialog.setWidth("80vw");
             dialog.open();
         });
-        exportData.addClassName("spreadsheet-action-button");
+        export.addClassName("spreadsheet-action-button");
 
-        Div gap = new Div();
-        gap.setWidth("10px");
-        actionPanel.add(addRowBtn, addColumnBtn, save, gap, importData, exportData);
-
-        Div tableDiv = createHTMLTable(rows);
-        tableDiv.getElement().executeJs("initContextMenu($0)", getElement());
-
-        layout.add(actionPanel, tableDiv);
-        return layout;
+        return export;
     }
 
     private void addRow(List<SpreadsheetRow> rows) {
