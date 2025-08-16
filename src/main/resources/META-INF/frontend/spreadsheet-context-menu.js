@@ -11,6 +11,7 @@ window.initContextMenu = function (serverRef) {
     function highlightColumn(index) {
         document.querySelectorAll('.spreadsheet-cell').forEach(cell => {
             cell.classList.remove('highlighted-column');
+            cell.classList.remove('highlighted-row');
         });
         document.querySelectorAll(`.spreadsheet-cell[data-column-number='${index}']`)
             .forEach(cell => cell.classList.add('highlighted-column'));
@@ -74,6 +75,7 @@ window.initContextMenu = function (serverRef) {
     function highlightRow(index) {
         document.querySelectorAll('.spreadsheet-cell').forEach(cell => {
             cell.classList.remove('highlighted-row');
+            cell.classList.remove('highlighted-column');
         });
         document.querySelectorAll(`.spreadsheet-cell[data-row-number='${index}']`)
             .forEach(cell => cell.classList.add('highlighted-row'));

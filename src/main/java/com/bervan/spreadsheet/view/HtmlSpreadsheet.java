@@ -91,6 +91,7 @@ public class HtmlSpreadsheet extends Div {
             td.getClassList().add("spreadsheet-cell");
             td.setAttribute("data-cell-id", cell.getCellId());
             td.setAttribute("data-column-number", String.valueOf(cell.getColumnNumber()));
+            td.setAttribute("data-row-number", String.valueOf(cell.getRowNumber()));
             td.getStyle()
                     .set("border", "1px solid #ccc")
                     .set("padding", "5px")
