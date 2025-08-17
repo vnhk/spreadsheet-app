@@ -2,7 +2,6 @@ package com.bervan.spreadsheet.view;
 
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
-import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.dom.Element;
 
@@ -21,15 +20,27 @@ public class HtmlSpreadsheet extends Div {
         table.setAttribute("class", "spreadsheet-table");
 
         table.getStyle()
-                .set("border-collapse", "collapse")
-                .set("width", "max-content");
+                .set("border-collapse", "separate")
+                .set("border-spacing", "0")
+                .set("width", "95vw")
+                .set("display", "block")
+                .set("overflow", "auto")
+                .set("max-height", "78vh");
 
         Element headerRow = new Element("tr");
         Element emptyHeader = new Element("th");
+
+        // EMPTY TOP-LEFT CELL — must stick both top and left
         emptyHeader.getStyle()
                 .set("border", "1px solid gray")
                 .set("padding", "5px")
-                .set("min-width", "50px");
+                .set("min-width", "50px")
+                .set("position", "sticky") // stick
+                .set("top", "0")
+                .set("left", "0")
+                .set("z-index", "5")       // above row/col headers
+                .set("background", "#333")
+                .set("color", "white");
         headerRow.appendChild(emptyHeader);
 
         if (!rows.isEmpty()) {
@@ -46,8 +57,9 @@ public class HtmlSpreadsheet extends Div {
         }
 
         this.getStyle()
-                .set("overflow", "auto")
-                .set("border", "1px solid lightgray");
+                .set("width", "100%")
+                .set("height", "80vh")
+                .set("overflow", "auto");
 
         this.getElement().appendChild(table);
         attachResizeColumnsAndRowsScript();
@@ -61,13 +73,16 @@ public class HtmlSpreadsheet extends Div {
             th.setAttribute("data-column-number", String.valueOf(i + 1));
             th.setText(Character.toString((char) ('A' + i)));
 
+            // COLUMN HEADERS (A, B, C...) — stick to top
             th.getStyle()
                     .set("border", "1px solid #ccc")
                     .set("padding", "5px")
                     .set("text-align", "center")
                     .set("color", "white")
                     .set("background", "#333")
-                    .set("position", "relative"); // needed for resizer
+                    .set("position", "sticky") // <-- keep sticky
+                    .set("top", "0")
+                    .set("z-index", "3");      // above cells, below top-left
 
             //set initial column widths if exists
             if (columnWidths != null && columnWidths.containsKey(i + 1)) {
@@ -86,13 +101,17 @@ public class HtmlSpreadsheet extends Div {
         rowNumberCell.setAttribute("data-row-number", String.valueOf(rowIndex + 1));
 
         rowNumberCell.setText(String.valueOf(rowIndex + 1));
+
+        // ROW NUMBERS — stick to left
         rowNumberCell.getStyle()
                 .set("border", "1px solid #ccc")
                 .set("padding", "5px")
                 .set("text-align", "center")
                 .set("color", "white")
                 .set("background", "#333")
-                .set("position", "relative"); // needed for resizer
+                .set("position", "sticky") // <-- keep sticky
+                .set("left", "0")
+                .set("z-index", "2");      // below top-left, below column headers
         tr.appendChild(rowNumberCell);
     }
 
@@ -151,51 +170,49 @@ public class HtmlSpreadsheet extends Div {
     }
 
     private void attachResizeColumnsAndRowsScript() {
-        getElement().executeJs(
-                """
-                        const table = this.querySelector('table');
-                        
-                        table.querySelectorAll('th.spreadsheet-header').forEach(th => {
-                            const columnNumber = th.dataset.columnNumber;
-                            const resizer = document.createElement('div');
-                            resizer.style.width = '5px';
-                            resizer.style.height = '100%';
-                            resizer.style.position = 'absolute';
-                            resizer.style.top = '0';
-                            resizer.style.right = '0';
-                            resizer.style.cursor = 'col-resize';
-                            resizer.style.userSelect = 'none';
-                            th.style.position = 'relative';
-                            th.appendChild(resizer);
-                        
-                            let startX, startWidth;
-                            let isResizing = false;
-                        
-                            const onMouseMove = e => {
-                                if (!isResizing) return;
-                                const newWidth = startWidth + e.clientX - startX;
-                                th.style.width = newWidth + 'px';
-                            };
-                        
-                            const onMouseUp = e => {
-                                if (!isResizing) return;
-                                isResizing = false;
-                                const finalWidth = th.offsetWidth;
-                                $0.$server.onColumnResize(columnNumber, finalWidth);
-                        
-                                document.removeEventListener('mousemove', onMouseMove);
-                                document.removeEventListener('mouseup', onMouseUp);
-                            };
-                        
-                            resizer.addEventListener('mousedown', e => {
-                                e.preventDefault();
-                                startX = e.clientX;
-                                startWidth = th.offsetWidth;
-                                isResizing = true;
-                                document.addEventListener('mousemove', onMouseMove);
-                                document.addEventListener('mouseup', onMouseUp);
-                            });
+        getElement().executeJs("""
+                    const table = this.querySelector('table');
+                
+                    table.querySelectorAll('th.spreadsheet-header').forEach(th => {
+                        const columnNumber = th.dataset.columnNumber;
+                        const resizer = document.createElement('div');
+                        resizer.style.width = '5px';
+                        resizer.style.height = '100%';
+                        resizer.style.position = 'absolute';
+                        resizer.style.top = '0';
+                        resizer.style.right = '0';
+                        resizer.style.cursor = 'col-resize';
+                        resizer.style.userSelect = 'none';
+                        // IMPORTANT: do NOT override th.style.position (must remain 'sticky')
+                        th.appendChild(resizer);
+                
+                        let startX, startWidth;
+                        let isResizing = false;
+                
+                        const onMouseMove = e => {
+                            if (!isResizing) return;
+                            const newWidth = startWidth + e.clientX - startX;
+                            th.style.width = newWidth + 'px';
+                        };
+                
+                        const onMouseUp = e => {
+                            if (!isResizing) return;
+                            isResizing = false;
+                            const finalWidth = th.offsetWidth;
+                            $0.$server.onColumnResize(columnNumber, finalWidth);
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+                        };
+                
+                        resizer.addEventListener('mousedown', e => {
+                            e.preventDefault();
+                            startX = e.clientX;
+                            startWidth = th.offsetWidth;
+                            isResizing = true;
+                            document.addEventListener('mousemove', onMouseMove);
+                            document.addEventListener('mouseup', onMouseUp);
                         });
-                        """, parentElement);
+                    });
+                """, parentElement);
     }
 }
