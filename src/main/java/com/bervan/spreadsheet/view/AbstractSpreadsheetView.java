@@ -36,7 +36,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
     private final SpreadsheetService spreadsheetService;
     private Spreadsheet spreadsheet;
-    private List<SpreadsheetRow> rows;
     private TextArea infoTextArea = new TextArea("");
 
     public AbstractSpreadsheetView(SpreadsheetService service) {
@@ -46,51 +45,71 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         infoTextArea.setVisible(false);
     }
 
-    private static List<SpreadsheetRow> getSpreadsheetRows(String body) throws JsonProcessingException {
+    private List<SpreadsheetRow> getSpreadsheetRows(String body) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
-        return mapper.readValue(body, new TypeReference<List<SpreadsheetRow>>() {
+        List<SpreadsheetRow> spreadsheetRows = mapper.readValue(body, new TypeReference<List<SpreadsheetRow>>() {
         });
+
+        if (spreadsheetRows == null) {
+            return new ArrayList<>();
+        }
+
+        return spreadsheetRows;
+    }
+
+    private Map<Integer, Integer> getColumnWidths(String body) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+
+        Map<Integer, Integer> integerIntegerMap = mapper.readValue(body, new TypeReference<Map<Integer, Integer>>() {
+        });
+
+        if(integerIntegerMap == null) {
+            return new HashMap<>();
+        }
+
+        return integerIntegerMap;
     }
 
     @ClientCallable
     public void onCellEdit(String cellId, String value) {
-        SpreadsheetCell cell = SpreadsheetService.findCellById(rows, cellId);
+        SpreadsheetCell cell = SpreadsheetService.findCellById(spreadsheet.getRows(), cellId);
         if (cell != null) {
             cell.setNewValueAndCellRelatedFields(value);
-            refreshView(rows);
+            refreshView(spreadsheet.getRows());
         }
     }
 
     @ClientCallable
     public void addColumnLeft(Integer columnNumber) {
-        spreadsheetService.addColumnLeft(rows, null, columnNumber);
-        refreshView(rows);
+        spreadsheetService.addColumnLeft(spreadsheet.getRows(), null, columnNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " added!");
     }
 
     @ClientCallable
     public void addColumnRight(Integer columnNumber) {
-        spreadsheetService.addColumnRight(rows, null, columnNumber);
-        refreshView(rows);
+        spreadsheetService.addColumnRight(spreadsheet.getRows(), null, columnNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber + 1) + " added!");
     }
 
     @ClientCallable
     public void duplicateColumn(Integer columnNumber) {
-        spreadsheetService.duplicateColumn(rows, columnNumber);
-        refreshView(rows);
+        spreadsheetService.duplicateColumn(spreadsheet.getRows(), columnNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification(" Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " duplicated!");
     }
 
     @ClientCallable
     public void deleteColumn(Integer columnNumber) {
         StringBuilder confirmationMessageDetails = new StringBuilder();
-        for (SpreadsheetRow row : rows) {
+        for (SpreadsheetRow row : spreadsheet.getRows()) {
             for (SpreadsheetCell cell : row.getCells()) {
                 //collect all formulas except formulas in column with columnNumber
                 if (cell.hasFormula() && cell.getColumnNumber() != columnNumber) {
-                    List<FunctionArgument> functionArguments = spreadsheetService.getFunctionArguments(rows, cell.getFormula());
+                    List<FunctionArgument> functionArguments = spreadsheetService.getFunctionArguments(spreadsheet.getRows(), cell.getFormula());
                     Set<FunctionArgument> formulasThatUseColumnToBeDeleted = functionArguments.stream().filter(e -> e instanceof CellReferenceArgument)
                             .filter(e -> ((CellReferenceArgument) e).getCell().getColumnNumber() == columnNumber)
                             .collect(Collectors.toSet());
@@ -125,40 +144,40 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private void deleteColumnConfirmed(Integer columnNumber) {
-        spreadsheetService.deleteColumn(rows, columnNumber);
-        refreshView(rows);
+        spreadsheetService.deleteColumn(spreadsheet.getRows(), columnNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification("Column " + SpreadsheetUtils.getColumnHeader(columnNumber) + " deleted!");
     }
 
     @ClientCallable
     public void addRowAbove(Integer rowNumber) {
-        spreadsheetService.addRowAbove(rows, null, rowNumber);
-        refreshView(rows);
+        spreadsheetService.addRowAbove(spreadsheet.getRows(), null, rowNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification(" Row " + rowNumber + " added!");
     }
 
     @ClientCallable
     public void addRowBelow(Integer rowNumber) {
-        spreadsheetService.addRowBelow(rows, null, rowNumber);
-        refreshView(rows);
+        spreadsheetService.addRowBelow(spreadsheet.getRows(), null, rowNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification(" Row " + (rowNumber + 1) + " added!");
     }
 
     @ClientCallable
     public void duplicateRow(Integer rowNumber) {
-        spreadsheetService.duplicateRow(rows, rowNumber);
-        refreshView(rows);
+        spreadsheetService.duplicateRow(spreadsheet.getRows(), rowNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification(" Row " + (rowNumber + 1) + " duplicated!");
     }
 
     @ClientCallable
     public void deleteRow(Integer rowNumber) {
         StringBuilder confirmationMessageDetails = new StringBuilder();
-        for (SpreadsheetRow row : rows) {
+        for (SpreadsheetRow row : spreadsheet.getRows()) {
             for (SpreadsheetCell cell : row.getCells()) {
                 //collect all formulas except formulas in row with rowNumber
                 if (cell.hasFormula() && cell.getColumnNumber() != rowNumber) {
-                    List<FunctionArgument> functionArguments = spreadsheetService.getFunctionArguments(rows, cell.getFormula());
+                    List<FunctionArgument> functionArguments = spreadsheetService.getFunctionArguments(spreadsheet.getRows(), cell.getFormula());
                     Set<FunctionArgument> formulasThatUseRowToBeDeleted = functionArguments.stream().filter(e -> e instanceof CellReferenceArgument)
                             .filter(e -> ((CellReferenceArgument) e).getCell().getRowNumber() == rowNumber)
                             .collect(Collectors.toSet());
@@ -193,11 +212,16 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     }
 
     private void deleteRowConfirmed(Integer rowNumber) {
-        spreadsheetService.deleteRow(rows, rowNumber);
-        refreshView(rows);
+        spreadsheetService.deleteRow(spreadsheet.getRows(), rowNumber);
+        refreshView(spreadsheet.getRows());
         showPrimaryNotification("Row " + rowNumber + " deleted!");
     }
 
+    @ClientCallable
+    public void onColumnResize(String columnNumber, int width) {
+        int col = Integer.parseInt(columnNumber);
+        spreadsheet.getColumnWidths().put(col, width);
+    }
 
     @Override
     public void setParameter(BeforeEvent event, String s) {
@@ -208,14 +232,15 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private void init(String spreadsheetName) {
         // Load spreadsheet rows from service
         spreadsheet = getOrCreate(spreadsheetName);
-        rows = getRows(spreadsheetName);
-        spreadsheetService.evaluateAllFormulas(rows);
-        refreshView(rows);
+        spreadsheet.setRows(getRows());
+        spreadsheet.setColumnWidths(getColumnWidths());
+        spreadsheetService.evaluateAllFormulas(spreadsheet.getRows());
+        refreshView(spreadsheet.getRows());
         add(infoTextArea);
     }
 
     private HtmlSpreadsheet createHTMLTable(List<SpreadsheetRow> rows) {
-        return new HtmlSpreadsheet(rows, getElement());
+        return new HtmlSpreadsheet(rows, getElement(), spreadsheet.getColumnWidths());
     }
 
     private VerticalLayout createSpreadsheetLayout(List<SpreadsheetRow> rows) {
@@ -299,7 +324,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 try {
                     List<SpreadsheetRow> spreadsheetRows = getSpreadsheetRows(textArea.getValue());
                     spreadsheet.setBody(textArea.getValue());
-                    this.rows = spreadsheetRows;
+                    spreadsheet.setRows(spreadsheetRows);
                 } catch (JsonProcessingException ex) {
                     showErrorNotification("Import failed!");
                 }
@@ -366,16 +391,19 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.findAndRegisterModules();
-            String jsonBody = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rows);
+            String jsonBody = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(spreadsheet.getRows());
             spreadsheet.setBody(jsonBody);
+
+            String columnWidthBody = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(spreadsheet.getColumnWidths());
+            spreadsheet.setColumnsWidthsBody(columnWidthBody);
+
             spreadsheetService.save(spreadsheet);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private List<SpreadsheetRow> getRows(String spreadsheetName) {
-        Spreadsheet spreadsheet = getOrCreate(spreadsheetName);
+    private List<SpreadsheetRow> getRows() {
         String body = spreadsheet.getBody();
         if (body != null) {
             try {
@@ -383,7 +411,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             } catch (JsonProcessingException e) {
                 try {
                     /* deprecated */
-                    return tryBackwardCompatibility(body);
+                    return tryRowsBackwardCompatibility(body);
                 } catch (JsonProcessingException innerE) {
                     log.error("Failed to parse spreadsheet body!", e);
                     showErrorNotification("Failed to retrieve spreadsheet body! Check text area below.");
@@ -398,7 +426,24 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         return new ArrayList<>();
     }
 
-    private List<SpreadsheetRow> tryBackwardCompatibility(String body) throws JsonProcessingException {
+    private Map<Integer, Integer> getColumnWidths() {
+        String columnConfigsBody = spreadsheet.getColumnsWidthsBody();
+        if (columnConfigsBody != null) {
+            try {
+                return getColumnWidths(columnConfigsBody);
+            } catch (JsonProcessingException e) {
+                log.error("Failed to parse spreadsheet column widths config!", e);
+                showErrorNotification("Failed to retrieve spreadsheet column widths config! Check text area below.");
+                infoTextArea.setValue(columnConfigsBody);
+                infoTextArea.setLabel("Body:");
+                infoTextArea.setVisible(true);
+            }
+        }
+
+        return new HashMap<>();
+    }
+
+    private List<SpreadsheetRow> tryRowsBackwardCompatibility(String body) throws JsonProcessingException {
         List<SpreadsheetRow> result = new ArrayList<>();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(body);

@@ -24,12 +24,11 @@ public class Spreadsheet extends BervanBaseEntity<UUID> implements PersistableTa
     @Column(columnDefinition = "LONGTEXT")
     private String body;
     @Column(columnDefinition = "LONGTEXT")
-    private String columnsConfig;
+    private String columnsWidthsBody;
     @Transient
     private List<SpreadsheetRow> rows = new ArrayList<>();
     @Transient
-    private List<ColumnConfig> configs = new ArrayList<>();
-    private Integer columnCount = 10;
+    private Map<Integer, Integer> columnWidths = new HashMap<>();
     private LocalDateTime modificationDate;
     private Boolean deleted = false;
 
@@ -113,29 +112,19 @@ public class Spreadsheet extends BervanBaseEntity<UUID> implements PersistableTa
         this.history = history;
     }
 
-    public String getColumnsConfig() {
-        return columnsConfig;
+    public Map<Integer, Integer> getColumnWidths() {
+        return columnWidths;
     }
 
-    public void setColumnsConfig(String columnConfig) {
-        this.columnsConfig = columnConfig;
+    public void setColumnWidths(Map<Integer, Integer> columnWidths) {
+        this.columnWidths = columnWidths;
     }
 
-    public List<ColumnConfig> getConfigs() {
-        return configs;
+    public String getColumnsWidthsBody() {
+        return columnsWidthsBody;
     }
 
-    public void setConfigs(List<ColumnConfig> configs) {
-        this.configs = configs;
-    }
-
-    public Optional<SpreadsheetCell> getCell(String cellId) {
-        for (SpreadsheetRow row : rows) {
-            Optional<SpreadsheetCell> any = row.getCells().stream().filter(e -> e.getCellId().equals(cellId)).findAny();
-            if (any.isPresent()) {
-                return any;
-            }
-        }
-        return Optional.empty();
+    public void setColumnsWidthsBody(String columnConfig) {
+        this.columnsWidthsBody = columnConfig;
     }
 }

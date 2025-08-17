@@ -25,9 +25,7 @@ public class HistorySpreadsheet extends BervanHistoryEntity<UUID> {
     private String body;
     @Column(columnDefinition = "LONGTEXT")
     @HistoryField
-    private String columnsConfig;
-    @HistoryField
-    private Integer columnCount;
+    private String columnsWidthsBody;
 
     private LocalDateTime modificationDate;
 
@@ -77,14 +75,6 @@ public class HistorySpreadsheet extends BervanHistoryEntity<UUID> {
         this.modificationDate = updateDate;
     }
 
-    public Integer getColumnCount() {
-        return columnCount;
-    }
-
-    public void setColumnCount(Integer columnCount) {
-        this.columnCount = columnCount;
-    }
-
     public Spreadsheet getHistoryOwner() {
         return historyOwner;
     }
@@ -93,11 +83,11 @@ public class HistorySpreadsheet extends BervanHistoryEntity<UUID> {
         this.historyOwner = historyOwner;
     }
 
-    public String getColumnsConfig() {
-        return columnsConfig;
+    public String getColumnsWidthsBody() {
+        return columnsWidthsBody;
     }
 
-    public void setColumnsConfig(String columnConfig) {
-        this.columnsConfig = columnConfig;
+    public void setColumnsWidthsBody(String columnsWidthsBody) {
+        this.columnsWidthsBody = columnsWidthsBody;
     }
 }
