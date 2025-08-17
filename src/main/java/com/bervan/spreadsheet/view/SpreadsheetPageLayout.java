@@ -9,7 +9,7 @@ public class SpreadsheetPageLayout extends MenuNavigationComponent {
 
         addButtonIfVisible(menuButtonsRow, AbstractSpreadsheetsView.ROUTE_NAME, "List", VaadinIcon.HOME.create());
         if (isEdit) {
-            addButtonIfVisible(menuButtonsRow, AbstractSpreadsheetView.ROUTE_NAME, spreadsheetName, VaadinIcon.HOME.create());
+            addButtonIfVisible(menuButtonsRow, AbstractSpreadsheetView.ROUTE_NAME, spreadsheetName, VaadinIcon.FILE.create());
         }
 
         add(menuButtonsRow);
