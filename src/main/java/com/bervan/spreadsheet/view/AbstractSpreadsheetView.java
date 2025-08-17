@@ -413,7 +413,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 try {
                     /* deprecated */
                     return tryRowsBackwardCompatibility(body);
-                } catch (JsonProcessingException innerE) {
+                } catch (Exception innerE) {
                     log.error("Failed to parse spreadsheet body!", e);
                     showErrorNotification("Failed to retrieve spreadsheet body! Check text area below.");
                     infoTextArea.setValue(body);
