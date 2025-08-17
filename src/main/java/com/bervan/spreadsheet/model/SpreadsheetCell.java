@@ -20,10 +20,10 @@ public class SpreadsheetCell {
 
     public SpreadsheetCell(int rowNumber, int columnNumber, Object value) {
         if (rowNumber == 0) {
-            throw new IllegalArgumentException("Row index cannot be equal to 0");
+            log.warn("Row index cannot be equal to 0");
         }
         if (columnNumber == 0) {
-            throw new IllegalArgumentException("Column number cannot be equal to 0");
+            log.warn("Column number cannot be equal to 0");
         }
         this.rowNumber = rowNumber;
         this.columnNumber = columnNumber;
