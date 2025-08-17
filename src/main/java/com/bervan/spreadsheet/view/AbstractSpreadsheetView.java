@@ -65,7 +65,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Map<Integer, Integer> integerIntegerMap = mapper.readValue(body, new TypeReference<Map<Integer, Integer>>() {
         });
 
-        if(integerIntegerMap == null) {
+        if (integerIntegerMap == null) {
             return new HashMap<>();
         }
 
@@ -382,6 +382,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
     private void refreshView(List<SpreadsheetRow> rows) {
         removeAll();
+        add(new SpreadsheetPageLayout(true, spreadsheet.getName(), AbstractSpreadsheetView.ROUTE_NAME));
         spreadsheetService.evaluateAllFormulas(rows);
         VerticalLayout spreadsheetLayout = createSpreadsheetLayout(rows);
         add(spreadsheetLayout);
