@@ -22,23 +22,17 @@ public class HtmlSpreadsheet extends Div {
         table.getStyle()
                 .set("border-collapse", "separate")
                 .set("border-spacing", "0")
-                .set("width", "95vw")
-                .set("display", "block")
-                .set("overflow", "auto")
-                .set("max-height", "78vh");
+                .set("width", "100%")
+                .set("table-layout", "fixed");
 
         Element headerRow = new Element("tr");
         Element emptyHeader = new Element("th");
 
-        // EMPTY TOP-LEFT CELL — must stick both top and left
+        // EMPTY TOP-LEFT CELL 
         emptyHeader.getStyle()
                 .set("border", "1px solid gray")
                 .set("padding", "5px")
-                .set("min-width", "50px")
-                .set("position", "sticky") // stick
-                .set("top", "0")
-                .set("left", "0")
-                .set("z-index", "5")       // above row/col headers
+                .set("width", "50px")
                 .set("background", "#333")
                 .set("color", "white");
         headerRow.appendChild(emptyHeader);
@@ -73,22 +67,22 @@ public class HtmlSpreadsheet extends Div {
             th.setAttribute("data-column-number", String.valueOf(i + 1));
             th.setText(Character.toString((char) ('A' + i)));
 
-            // COLUMN HEADERS (A, B, C...) — stick to top
+            // COLUMN HEADERS (A, B, C...)
             th.getStyle()
                     .set("border", "1px solid #ccc")
                     .set("padding", "5px")
                     .set("text-align", "center")
                     .set("color", "white")
                     .set("background", "#333")
-                    .set("position", "sticky") // <-- keep sticky
-                    .set("top", "0")
-                    .set("z-index", "3");      // above cells, below top-left
+                    .set("position", "relative")
+                    .set("min-width", "80px");
 
             //set initial column widths if exists
             if (columnWidths != null && columnWidths.containsKey(i + 1)) {
                 int width = columnWidths.get(i + 1);
                 th.getStyle().set("width", width + "px");
-                columnWidths.put(i + 1, width);
+            } else {
+                th.getStyle().set("width", "120px"); // default width
             }
 
             headerRow.appendChild(th);
@@ -102,16 +96,14 @@ public class HtmlSpreadsheet extends Div {
 
         rowNumberCell.setText(String.valueOf(rowIndex + 1));
 
-        // ROW NUMBERS — stick to left
+        // ROW NUMBERS
         rowNumberCell.getStyle()
                 .set("border", "1px solid #ccc")
                 .set("padding", "5px")
                 .set("text-align", "center")
                 .set("color", "white")
                 .set("background", "#333")
-                .set("position", "sticky") // <-- keep sticky
-                .set("left", "0")
-                .set("z-index", "2");      // below top-left, below column headers
+                .set("width", "50px");
         tr.appendChild(rowNumberCell);
     }
 
@@ -126,7 +118,15 @@ public class HtmlSpreadsheet extends Div {
             td.getStyle()
                     .set("border", "1px solid #ccc")
                     .set("padding", "5px")
-                    .set("min-width", "50px");
+                    .set("min-width", "80px");
+
+            // Set initial column width for cells if exists
+            if (columnWidths != null && columnWidths.containsKey(cell.getColumnNumber())) {
+                int width = columnWidths.get(cell.getColumnNumber());
+                td.getStyle().set("width", width + "px");
+            } else {
+                td.getStyle().set("width", "120px"); // default width to match headers
+            }
 
             // contenteditable div inside td
             Div editableDiv = new Div();
@@ -136,8 +136,9 @@ public class HtmlSpreadsheet extends Div {
             editableDiv.getElement().setAttribute("data-value", String.valueOf(cell.getValue()));
             editableDiv.getElement().setAttribute("data-cell-id", cell.getCellId());
             editableDiv.getStyle()
-                    .set("min-width", "50px")
-                    .set("padding", "4px");
+                    .set("width", "100%")
+                    .set("padding", "4px")
+                    .set("box-sizing", "border-box");
 
             if (cell.hasFormula()) {
                 editableDiv.getStyle()
@@ -173,45 +174,67 @@ public class HtmlSpreadsheet extends Div {
         getElement().executeJs("""
                     const table = this.querySelector('table');
                 
-                    table.querySelectorAll('th.spreadsheet-header').forEach(th => {
+                    table.querySelectorAll('th.spreadsheet-header').forEach((th, index) => {
                         const columnNumber = th.dataset.columnNumber;
+                
+                        // Create resizer handle
                         const resizer = document.createElement('div');
                         resizer.style.width = '5px';
                         resizer.style.height = '100%';
                         resizer.style.position = 'absolute';
                         resizer.style.top = '0';
-                        resizer.style.right = '0';
+                        resizer.style.right = '-2px';
                         resizer.style.cursor = 'col-resize';
                         resizer.style.userSelect = 'none';
-                        // IMPORTANT: do NOT override th.style.position (must remain 'sticky')
+                        resizer.style.backgroundColor = '#666';
+                        resizer.style.zIndex = '10';
+                
+                        th.style.position = 'relative';
                         th.appendChild(resizer);
                 
-                        let startX, startWidth;
+                        let startX, startWidth, tableWidth;
                         let isResizing = false;
                 
-                        const onMouseMove = e => {
-                            if (!isResizing) return;
-                            const newWidth = startWidth + e.clientX - startX;
-                            th.style.width = newWidth + 'px';
-                        };
-                
-                        const onMouseUp = e => {
-                            if (!isResizing) return;
-                            isResizing = false;
-                            const finalWidth = th.offsetWidth;
-                            $0.$server.onColumnResize(columnNumber, finalWidth);
-                            document.removeEventListener('mousemove', onMouseMove);
-                            document.removeEventListener('mouseup', onMouseUp);
-                        };
-                
-                        resizer.addEventListener('mousedown', e => {
+                        resizer.addEventListener('mousedown', (e) => {
+                            console.log('Resize started for column', columnNumber);
                             e.preventDefault();
+                            e.stopPropagation();
+                
+                            isResizing = true;
                             startX = e.clientX;
                             startWidth = th.offsetWidth;
-                            isResizing = true;
+                            tableWidth = table.offsetWidth;
+                
                             document.addEventListener('mousemove', onMouseMove);
                             document.addEventListener('mouseup', onMouseUp);
                         });
+                
+                        const onMouseMove = (e) => {
+                            if (!isResizing) return;
+                
+                            const deltaX = e.clientX - startX;
+                            const newWidth = Math.max(50, startWidth + deltaX);
+                
+                            th.style.width = newWidth + 'px';
+                
+                            const columnCells = table.querySelectorAll(`td[data-column-number="${columnNumber}"]`);
+                            columnCells.forEach(cell => {
+                                cell.style.width = newWidth + 'px';
+                            });
+                        };
+                
+                        const onMouseUp = (e) => {
+                            if (!isResizing) return;
+                
+                            isResizing = false;
+                            const finalWidth = th.offsetWidth;
+                            console.log('Resize ended for column', columnNumber, 'final width:', finalWidth);
+                
+                            $0.$server.onColumnResize(columnNumber, finalWidth);
+                
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+                        };
                     });
                 """, parentElement);
     }
