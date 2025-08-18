@@ -19,6 +19,10 @@ import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -249,15 +253,24 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         layout.setSpacing(true);
 
         HorizontalLayout actionPanel = getToolbarPanel();
-        Button addRowBtn = getAddRowOptBtn(rows);
-        Button addColumnBtn = getAddColumnOptBtn(rows);
-        Button save = getSaveOptButton();
-        Button importData = getImportDataOptButton();
-        Button exportData = getExportOptButton();
 
-        Div gap = new Div();
-        gap.setWidth("10px");
-        actionPanel.add(addRowBtn, addColumnBtn, save, gap, importData, exportData);
+        HorizontalLayout editSection = (HorizontalLayout) actionPanel.getComponentAt(0);
+        HorizontalLayout dataSection = (HorizontalLayout) actionPanel.getComponentAt(1);
+        HorizontalLayout fileSection = (HorizontalLayout) actionPanel.getComponentAt(2);
+
+        VerticalLayout editContent = (VerticalLayout) editSection.getComponentAt(0);
+        HorizontalLayout editButtons = (HorizontalLayout) editContent.getComponentAt(0);
+        editButtons.add(getAddRowOptBtn(rows), getAddColumnOptBtn(rows));
+
+        VerticalLayout dataContent = (VerticalLayout) dataSection.getComponentAt(0);
+        HorizontalLayout dataButtons = (HorizontalLayout) dataContent.getComponentAt(0);
+        // dataButtons.add(...); // Add data manipulation buttons
+
+        VerticalLayout fileContent = (VerticalLayout) fileSection.getComponentAt(0);
+        HorizontalLayout fileButtons = (HorizontalLayout) fileContent.getComponentAt(0);
+        fileButtons.add(getSaveOptButton(), getImportDataOptButton(), getExportOptButton());
+
+        layout.add(actionPanel);
 
         Div tableDiv = createHTMLTable(rows);
         tableDiv.getElement().executeJs("initContextMenu($0)", getElement());
@@ -272,44 +285,95 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         HorizontalLayout actionPanel = new HorizontalLayout();
         actionPanel.addClassName("spreadsheet-action-panel");
         actionPanel.setWidthFull();
-        actionPanel.getStyle().set("position", "sticky")
+        actionPanel.getStyle()
+                .set("position", "sticky")
                 .set("top", "0")
                 .set("left", "0")
-                .set("background", "white")
-                .set("z-index", "10");
+                .set("background", "#f8f9fa")
+                .set("z-index", "10")
+                .set("border-bottom", "1px solid #dee2e6")
+                .set("padding", "8px 16px")
+                .set("box-shadow", "0 2px 4px rgba(0,0,0,0.1)");
+
+        HorizontalLayout editSection = createRibbonSection("Edit");
+        HorizontalLayout dataSection = createRibbonSection("Data");
+        HorizontalLayout fileSection = createRibbonSection("File");
+
+        actionPanel.add(editSection, dataSection, fileSection);
+        actionPanel.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+        actionPanel.setAlignItems(FlexComponent.Alignment.CENTER);
+
         return actionPanel;
     }
 
+    private HorizontalLayout createRibbonSection(String title) {
+        HorizontalLayout section = new HorizontalLayout();
+        section.getStyle()
+                .set("border-right", "1px solid #dee2e6")
+                .set("padding-right", "16px")
+                .set("margin-right", "16px");
+
+        VerticalLayout sectionContent = new VerticalLayout();
+        sectionContent.setSpacing(false);
+        sectionContent.setPadding(false);
+
+        // Section title
+        Span sectionTitle = new Span(title);
+        sectionTitle.getStyle()
+                .set("font-size", "11px")
+                .set("font-weight", "600")
+                .set("color", "#495057")
+                .set("text-transform", "uppercase")
+                .set("letter-spacing", "0.5px")
+                .set("margin-bottom", "4px");
+
+        HorizontalLayout buttonsRow = new HorizontalLayout();
+        buttonsRow.setSpacing(true);
+        buttonsRow.setPadding(false);
+
+        sectionContent.add(buttonsRow, sectionTitle);
+        section.add(sectionContent);
+
+        return section;
+    }
+
+
     private Button getAddRowOptBtn(List<SpreadsheetRow> rows) {
-        Button addRowBtn = new Button("Add Row", event -> {
+        Button addRowBtn = new Button("Add Row");
+        addRowBtn.addClickListener(event -> {
             addRow(rows);
             showPrimaryNotification("Row " + (rows.size()) + " added");
         });
-        addRowBtn.addClassName("spreadsheet-action-button");
+
+        styleSpreadsheetButton(addRowBtn, VaadinIcon.PLUS.create(), "Add a new row to the spreadsheet");
         return addRowBtn;
     }
 
     private Button getAddColumnOptBtn(List<SpreadsheetRow> rows) {
-        Button addColumnBtn = new Button("Add Column", event -> {
+        Button addColumnBtn = new Button("Add Column");
+        addColumnBtn.addClickListener(event -> {
             addColumn(rows);
             showPrimaryNotification("Column " + SpreadsheetUtils.getColumnHeader(rows.get(0).getCells().size() + 1) + " added");
         });
-        addColumnBtn.addClassName("spreadsheet-action-button");
+
+        styleSpreadsheetButton(addColumnBtn, VaadinIcon.PLUS_CIRCLE.create(), "Add a new column to the spreadsheet");
         return addColumnBtn;
     }
 
     private Button getSaveOptButton() {
-        Button save = new Button("Save", event -> {
+        Button saveBtn = new Button("Save");
+        saveBtn.addClickListener(event -> {
             save();
-            showSuccessNotification("Spreadsheet saved!");
+            showPrimaryNotification("Spreadsheet saved successfully");
         });
-        save.addClassName("spreadsheet-action-button");
 
-        return save;
+        styleSpreadsheetButton(saveBtn, VaadinIcon.CHECK_CIRCLE.create(), "Save the spreadsheet");
+        return saveBtn;
     }
 
     private Button getImportDataOptButton() {
-        Button importData = new Button("Import", event -> {
+        Button importBtn = new Button("Import");
+        importBtn.addClickListener(event -> {
             TextArea textArea = new TextArea();
             textArea.setLabel("Data:");
 
@@ -335,12 +399,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             confirmDialog.addCancelListener(e -> {
             });
         });
-        importData.addClassName("spreadsheet-action-button");
-        return importData;
+
+        styleSpreadsheetButton(importBtn, VaadinIcon.UPLOAD.create(), "Import data from file");
+        return importBtn;
     }
 
     private Button getExportOptButton() {
-        Button export = new Button("Export", event -> {
+        Button exportBtn = new Button("Export");
+        exportBtn.addClickListener(event -> {
             String body = getOrCreate(spreadsheet.getName()).getBody();
             Dialog dialog = new Dialog();
             TextArea textArea = new TextArea(body);
@@ -351,9 +417,56 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             dialog.setWidth("80vw");
             dialog.open();
         });
-        export.addClassName("spreadsheet-action-button");
 
-        return export;
+        styleSpreadsheetButton(exportBtn, VaadinIcon.DOWNLOAD.create(), "Export spreadsheet to file");
+        return exportBtn;
+    }
+
+    private void styleSpreadsheetButton(Button button, Icon icon, String tooltip) {
+        button.setIcon(icon);
+        button.getStyle()
+                .set("background", "#ffffff")
+                .set("border", "1px solid #dee2e6")
+                .set("border-radius", "4px")
+                .set("color", "#495057")
+                .set("font-size", "12px")
+                .set("font-weight", "500")
+                .set("padding", "8px 12px")
+                .set("min-width", "80px")
+                .set("cursor", "pointer")
+                .set("transition", "all 0.2s ease");
+
+        // Hover effect
+        button.getElement().addEventListener("mouseenter", e -> {
+            button.getStyle()
+                    .set("background", "#e9ecef")
+                    .set("border-color", "#adb5bd")
+                    .set("box-shadow", "0 2px 4px rgba(0,0,0,0.1)");
+        });
+
+        button.getElement().addEventListener("mouseleave", e -> {
+            button.getStyle()
+                    .set("background", "#ffffff")
+                    .set("border-color", "#dee2e6")
+                    .set("box-shadow", "none");
+        });
+
+        // Active effect
+        button.getElement().addEventListener("mousedown", e -> {
+            button.getStyle()
+                    .set("background", "#d1ecf1")
+                    .set("border-color", "#bee5eb");
+        });
+
+        button.getElement().addEventListener("mouseup", e -> {
+            button.getStyle()
+                    .set("background", "#e9ecef")
+                    .set("border-color", "#adb5bd");
+        });
+
+        if (tooltip != null) {
+            button.getElement().setAttribute("title", tooltip);
+        }
     }
 
     private void addRow(List<SpreadsheetRow> rows) {
