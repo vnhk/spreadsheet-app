@@ -441,6 +441,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                     spreadsheet.setBody(textArea.getValue());
                     spreadsheet.setRows(spreadsheetRows);
                 } catch (JsonProcessingException ex) {
+                    log.error("Failed to parse spreadsheet body!", ex);
                     showErrorNotification("Import failed!");
                 }
             });
@@ -449,6 +450,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             confirmDialog.setCancelable(true);
             confirmDialog.addCancelListener(e -> {
             });
+            confirmDialog.open();
         });
 
         importBtn.getElement().setAttribute("data-action", "import");
