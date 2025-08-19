@@ -11,10 +11,13 @@ import java.util.Map;
 public class HtmlSpreadsheet extends Div {
     private final Element parentElement;
     private final Map<Integer, Integer> columnWidths;
+    private Element cellInfoDisplay;
 
     public HtmlSpreadsheet(List<SpreadsheetRow> rows, Element parentElement, Map<Integer, Integer> columnWidths) {
         this.parentElement = parentElement;
         this.columnWidths = columnWidths;
+
+        createCellInfoDisplay();
 
         Element table = new Element("table");
         table.setAttribute("class", "spreadsheet-table");
@@ -53,10 +56,107 @@ public class HtmlSpreadsheet extends Div {
         this.getStyle()
                 .set("width", "100%")
                 .set("height", "80vh")
-                .set("overflow", "auto");
+                .set("overflow", "auto")
+                .set("position", "relative"); // Add position relative for absolute positioning of info display
 
+        this.getElement().appendChild(cellInfoDisplay);
         this.getElement().appendChild(table);
         attachResizeColumnsAndRowsScript();
+        attachCellClickScript();
+    }
+
+    private void createCellInfoDisplay() {
+        cellInfoDisplay = new Element("div");
+        cellInfoDisplay.setAttribute("id", "cell-info-display");
+        cellInfoDisplay.getStyle()
+                .set("position", "fixed")
+                .set("top", "80px")
+                .set("left", "20px")
+                .set("background", "rgba(0, 0, 0, 0.9)")
+                .set("color", "white")
+                .set("padding", "10px 15px")
+                .set("border-radius", "6px")
+                .set("font-family", "monospace")
+                .set("font-size", "14px")
+                .set("z-index", "9999")
+                .set("display", "none")
+                .set("box-shadow", "0 4px 12px rgba(0, 0, 0, 0.4)")
+                .set("border", "1px solid #444")
+                .set("min-width", "200px");
+        
+        Element closeButton = new Element("span");
+        closeButton.setText("×");
+        closeButton.setAttribute("id", "cell-info-close");
+        closeButton.getStyle()
+                .set("position", "absolute")
+                .set("top", "2px")
+                .set("right", "8px")
+                .set("cursor", "pointer")
+                .set("font-size", "18px")
+                .set("color", "#ccc")
+                .set("line-height", "1")
+                .set("font-weight", "bold");
+        
+        Element contentDiv = new Element("div");
+        contentDiv.setAttribute("id", "cell-info-content");
+        contentDiv.setText("No cell selected");
+        
+        cellInfoDisplay.appendChild(closeButton);
+        cellInfoDisplay.appendChild(contentDiv);
+    }
+
+    private void attachCellClickScript() {
+        getElement().executeJs("""
+                const table = this.querySelector('table');
+                const cellInfoDisplay = this.querySelector('#cell-info-display');
+                const cellInfoContent = this.querySelector('#cell-info-content');
+                const closeButton = this.querySelector('#cell-info-close');
+                
+                // Close button click handler
+                closeButton.addEventListener('click', function(e) {
+                    cellInfoDisplay.style.display = 'none';
+                    // Remove all cell highlighting
+                    table.querySelectorAll('.spreadsheet-cell').forEach(c => {
+                        c.style.outline = '';
+                    });
+                    e.stopPropagation();
+                });
+                
+                // Add click listeners to all spreadsheet cells
+                table.addEventListener('click', function(e) {
+                    const cell = e.target.closest('.spreadsheet-cell');
+                    if (cell) {
+                        const cellId = cell.dataset.cellId;
+                        const columnNumber = cell.dataset.columnNumber;
+                        const rowNumber = cell.dataset.rowNumber;
+                        
+                        // Update cell info display
+                        cellInfoContent.innerHTML = '<strong>Cell:</strong> ' + cellId + '<br><strong>Column:</strong> ' + columnNumber + '<br><strong>Row:</strong> ' + rowNumber;
+                        cellInfoDisplay.style.display = 'block';
+                        
+                        // Remove previous selection highlighting
+                        table.querySelectorAll('.spreadsheet-cell').forEach(c => {
+                            c.style.outline = '';
+                        });
+                        
+                        // Highlight selected cell
+                        cell.style.outline = '2px solid #007bff';
+                        
+                        e.stopPropagation();
+                    }
+                });
+                
+                // ESC key to close info display
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && cellInfoDisplay.style.display === 'block') {
+                        cellInfoDisplay.style.display = 'none';
+                        // Remove all cell highlighting
+                        table.querySelectorAll('.spreadsheet-cell').forEach(c => {
+                            c.style.outline = '';
+                        });
+                    }
+                });
+                """);
     }
 
     private void addColumnHeaders(List<SpreadsheetRow> rows, Element headerRow) {
