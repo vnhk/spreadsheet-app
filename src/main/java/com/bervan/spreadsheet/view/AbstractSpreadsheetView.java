@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
@@ -26,6 +27,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import lombok.extern.slf4j.Slf4j;
@@ -221,6 +223,69 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         showPrimaryNotification("Row " + rowNumber + " deleted!");
     }
 
+    private void openFindReplaceDialog(List<SpreadsheetRow> rows) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Find & Replace");
+        dialog.setWidth("60vw");
+
+        VerticalLayout dialogLayout = new VerticalLayout();
+
+        TextField findField = new TextField("Find");
+        findField.setWidthFull();
+        findField.setPlaceholder("Enter text to find");
+
+        TextField replaceField = new TextField("Replace with");
+        replaceField.setWidthFull();
+
+        HorizontalLayout buttonLayout = new HorizontalLayout();
+
+        Button findNextBtn = new Button("Find Next", VaadinIcon.ARROW_RIGHT.create());
+        findNextBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        findNextBtn.addClickListener(e -> {
+            String findText = findField.getValue();
+            if (!findText.isEmpty()) {
+                // Implement find logic
+                showPrimaryNotification("Searching for: " + findText);
+            }
+        });
+
+        Button replaceBtn = new Button("Replace", VaadinIcon.REFRESH.create());
+        replaceBtn.addClickListener(e -> {
+            String findText = findField.getValue();
+            String replaceText = replaceField.getValue();
+            if (!findText.isEmpty()) {
+                // Implement replace logic
+                showPrimaryNotification("Replaced: " + findText + " with: " + replaceText);
+            }
+        });
+
+        Button replaceAllBtn = new Button("Replace All", VaadinIcon.REFRESH.create());
+        replaceAllBtn.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        replaceAllBtn.addClickListener(e -> {
+            String findText = findField.getValue();
+            String replaceText = replaceField.getValue();
+            if (!findText.isEmpty()) {
+                for (SpreadsheetRow row : rows) {
+                    row.getCells().stream().filter(c -> c.getValue().equals(findText))
+                            .forEach(c -> c.setNewValueAndCellRelatedFields(replaceText));
+                }
+                refreshView(rows);
+                showPrimaryNotification("Replaced all occurrences of: " + findText);
+            }
+        });
+
+        Button cancelBtn = new Button("Cancel", VaadinIcon.CLOSE.create());
+        cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        cancelBtn.addClickListener(e -> dialog.close());
+
+        buttonLayout.add(findNextBtn, replaceBtn, replaceAllBtn, cancelBtn);
+
+        dialogLayout.add(findField, replaceField, buttonLayout);
+        dialog.add(dialogLayout);
+
+        dialog.open();
+    }
+
     @ClientCallable
     public void onColumnResize(String columnNumber, int width) {
         int col = Integer.parseInt(columnNumber);
@@ -252,24 +317,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         layout.setPadding(true);
         layout.setSpacing(true);
 
-        HorizontalLayout actionPanel = getToolbarPanel();
-
-        HorizontalLayout editSection = (HorizontalLayout) actionPanel.getComponentAt(0);
-        HorizontalLayout dataSection = (HorizontalLayout) actionPanel.getComponentAt(1);
-        HorizontalLayout fileSection = (HorizontalLayout) actionPanel.getComponentAt(2);
-
-        VerticalLayout editContent = (VerticalLayout) editSection.getComponentAt(0);
-        HorizontalLayout editButtons = (HorizontalLayout) editContent.getComponentAt(0);
-        editButtons.add(getAddRowOptBtn(rows), getAddColumnOptBtn(rows));
-
-        VerticalLayout dataContent = (VerticalLayout) dataSection.getComponentAt(0);
-        HorizontalLayout dataButtons = (HorizontalLayout) dataContent.getComponentAt(0);
-        // dataButtons.add(...); // Add data manipulation buttons
-
-        VerticalLayout fileContent = (VerticalLayout) fileSection.getComponentAt(0);
-        HorizontalLayout fileButtons = (HorizontalLayout) fileContent.getComponentAt(0);
-        fileButtons.add(getSaveOptButton(), getImportDataOptButton(), getExportOptButton());
-
+        HorizontalLayout actionPanel = getToolbarPanel(rows);
         layout.add(actionPanel);
 
         Div tableDiv = createHTMLTable(rows);
@@ -281,7 +329,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         return layout;
     }
 
-    private HorizontalLayout getToolbarPanel() {
+    private HorizontalLayout getToolbarPanel(List<SpreadsheetRow> rows) {
         HorizontalLayout actionPanel = new HorizontalLayout();
         actionPanel.addClassName("spreadsheet-action-panel");
         actionPanel.setWidthFull();
@@ -289,15 +337,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                 .set("position", "sticky")
                 .set("top", "0")
                 .set("left", "0")
-                .set("background", "#f8f9fa")
                 .set("z-index", "10")
                 .set("border-bottom", "1px solid #dee2e6")
                 .set("padding", "8px 16px")
                 .set("box-shadow", "0 2px 4px rgba(0,0,0,0.1)");
 
-        HorizontalLayout editSection = createRibbonSection("Edit");
-        HorizontalLayout dataSection = createRibbonSection("Data");
-        HorizontalLayout fileSection = createRibbonSection("File");
+        HorizontalLayout editSection = createRibbonSection("Edit", getAddRowOptBtn(rows), getAddColumnOptBtn(rows));
+        HorizontalLayout dataSection = createRibbonSection("Data", getFindReplaceButton(rows));
+        HorizontalLayout fileSection = createRibbonSection("File", getSaveOptButton(), getImportDataOptButton(), getExportOptButton());
 
         actionPanel.add(editSection, dataSection, fileSection);
         actionPanel.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
@@ -306,12 +353,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         return actionPanel;
     }
 
-    private HorizontalLayout createRibbonSection(String title) {
+    private HorizontalLayout createRibbonSection(String title, Button... buttons) {
         HorizontalLayout section = new HorizontalLayout();
-        section.getStyle()
-                .set("border-right", "1px solid #dee2e6")
-                .set("padding-right", "16px")
-                .set("margin-right", "16px");
+        section.addClassName("spreadsheet-ribbon-section");
 
         VerticalLayout sectionContent = new VerticalLayout();
         sectionContent.setSpacing(false);
@@ -319,17 +363,14 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
 
         // Section title
         Span sectionTitle = new Span(title);
-        sectionTitle.getStyle()
-                .set("font-size", "11px")
-                .set("font-weight", "600")
-                .set("color", "#495057")
-                .set("text-transform", "uppercase")
-                .set("letter-spacing", "0.5px")
-                .set("margin-bottom", "4px");
+        sectionTitle.addClassName("spreadsheet-section-title");
 
         HorizontalLayout buttonsRow = new HorizontalLayout();
         buttonsRow.setSpacing(true);
         buttonsRow.setPadding(false);
+        if (buttons != null && buttons.length > 0) {
+            buttonsRow.add(buttons);
+        }
 
         sectionContent.add(buttonsRow, sectionTitle);
         section.add(sectionContent);
@@ -337,6 +378,15 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         return section;
     }
 
+    private Button getFindReplaceButton(List<SpreadsheetRow> rows) {
+        Button findReplaceBtn = new Button("Find & Replace");
+        findReplaceBtn.addClickListener(event -> {
+            openFindReplaceDialog(rows);
+        });
+
+        styleSpreadsheetButton(findReplaceBtn, VaadinIcon.SEARCH.create(), "Find and replace text in spreadsheet");
+        return findReplaceBtn;
+    }
 
     private Button getAddRowOptBtn(List<SpreadsheetRow> rows) {
         Button addRowBtn = new Button("Add Row");
@@ -367,6 +417,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             showPrimaryNotification("Spreadsheet saved successfully");
         });
 
+        saveBtn.getElement().setAttribute("data-action", "save");
         styleSpreadsheetButton(saveBtn, VaadinIcon.CHECK_CIRCLE.create(), "Save the spreadsheet");
         return saveBtn;
     }
@@ -400,6 +451,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             });
         });
 
+        importBtn.getElement().setAttribute("data-action", "import");
         styleSpreadsheetButton(importBtn, VaadinIcon.UPLOAD.create(), "Import data from file");
         return importBtn;
     }
@@ -418,51 +470,22 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             dialog.open();
         });
 
+        exportBtn.getElement().setAttribute("data-action", "export");
         styleSpreadsheetButton(exportBtn, VaadinIcon.DOWNLOAD.create(), "Export spreadsheet to file");
         return exportBtn;
     }
 
     private void styleSpreadsheetButton(Button button, Icon icon, String tooltip) {
         button.setIcon(icon);
+        button.addClassName("spreadsheet-button");
+        
         button.getStyle()
-                .set("background", "#ffffff")
-                .set("border", "1px solid #dee2e6")
                 .set("border-radius", "4px")
-                .set("color", "#495057")
                 .set("font-size", "12px")
                 .set("font-weight", "500")
                 .set("padding", "8px 12px")
                 .set("min-width", "80px")
-                .set("cursor", "pointer")
-                .set("transition", "all 0.2s ease");
-
-        // Hover effect
-        button.getElement().addEventListener("mouseenter", e -> {
-            button.getStyle()
-                    .set("background", "#e9ecef")
-                    .set("border-color", "#adb5bd")
-                    .set("box-shadow", "0 2px 4px rgba(0,0,0,0.1)");
-        });
-
-        button.getElement().addEventListener("mouseleave", e -> {
-            button.getStyle()
-                    .set("background", "#ffffff")
-                    .set("border-color", "#dee2e6")
-                    .set("box-shadow", "none");
-        });
-
-        // Active effect
-        button.getElement().addEventListener("mousedown", e -> {
-            button.getStyle()
-                    .set("background", "#d1ecf1")
-                    .set("border-color", "#bee5eb");
-        });
-
-        button.getElement().addEventListener("mouseup", e -> {
-            button.getStyle()
-                    .set("background", "#e9ecef")
-                    .set("border-color", "#adb5bd");
-        });
+                .set("cursor", "pointer");
 
         if (tooltip != null) {
             button.getElement().setAttribute("title", tooltip);

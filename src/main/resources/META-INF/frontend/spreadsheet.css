@@ -2,29 +2,32 @@
 .context-menu {
     position: absolute;
     display: none;
-    background: white;
-    border: 1px solid #999;
-    box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+    background: var(--lumo-base-color);
+    border: 1px solid var(--spreadsheet-button-border);
+    box-shadow: 2px 2px 6px var(--spreadsheet-shadow);
     z-index: 9999;
     padding: 4px;
     font-size: 14px;
+    color: var(--spreadsheet-button-color);
 }
 .context-menu div {
     padding: 4px 10px;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 .context-menu div:hover {
-    background-color: #eeeeee;
+    background-color: var(--spreadsheet-button-hover-background);
+    color: #ffffff;
 }
 
 .highlighted-column {
-    background-color: rgba(168, 172, 174, 0.19) !important;
-    border-right: 2px solid #0288d1;
+    background-color: rgba(0, 255, 255, 0.2) !important;
+    border-right: 2px solid var(--spreadsheet-button-glow);
 }
 
 .highlighted-row {
-    background-color: rgba(168, 172, 174, 0.19) !important;
-    border-right: 2px solid #0288d1;
+    background-color: rgba(0, 255, 255, 0.2) !important;
+    border-right: 2px solid var(--spreadsheet-button-glow);
 }
 
 /*spreadsheet context menu*/
@@ -32,51 +35,243 @@
 .spreadsheet-table {
     border-collapse: collapse;
     width: 100%;
-    font-family: "Segoe UI", sans-serif;
-    background-color: #1e1e2f;
-    color: #f0f0f0;
+    font-family: var(--lumo-font-family);
+    background-color: var(--lumo-base-color);
+    color: var(--table-cell-text-color);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 15px var(--spreadsheet-shadow);
+    border: 1px solid var(--spreadsheet-button-border);
 }
 
 .spreadsheet-table th,
 .spreadsheet-table td {
-    border: 1px solid #444;
+    border: 1px solid var(--spreadsheet-button-border);
     padding: 10px;
     text-align: center;
 }
 
 .spreadsheet-table th {
-    background-color: #333;
+    background: linear-gradient(135deg, var(--table-header-row-background), var(--lumo-base-secondary-color));
     min-width: 20px;
-    color: #ffffff;
+    color: var(--table-header-row-color);
     font-weight: 600;
+    text-shadow: 0 0 5px var(--spreadsheet-button-glow);
 }
 
 .spreadsheet-table td input {
     width: 100%;
     padding: 6px;
     border: none;
-    background-color: #2a2a3d;
-    color: #f0f0f0;
+    background-color: var(--table-cell-bgColor);
+    color: var(--table-cell-text-color);
     font-size: 14px;
     border-radius: 4px;
+    font-family: var(--lumo-font-family);
 }
 
 .spreadsheet-table td input:focus {
-    outline: 2px solid #4e9af1;
-    background-color: #1a1a2b;
+    outline: 2px solid var(--spreadsheet-button-glow);
+    background-color: var(--lumo-base-color);
+    box-shadow: 0 0 10px var(--spreadsheet-shadow);
 }
 
 .spreadsheet-table td input[data-formula] {
-    color: #64b5f6; /* blue for formulas */
+    color: var(--spreadsheet-button-glow);
+    text-shadow: 0 0 3px var(--spreadsheet-button-glow);
 }
 
 .spreadsheet-table tr:nth-child(even) {
-    background-color: #2a2a3d;
+    background-color: var(--lumo-base-secondary-color);
 }
 
 .spreadsheet-table tr:hover {
-    background-color: #3b3b4f;
+    background-color: var(--spreadsheet-button-background);
+    box-shadow: inset 0 0 10px var(--spreadsheet-shadow);
+}
+
+/* Cyberpunk Spreadsheet Action Panel */
+.spreadsheet-action-panel {
+    background: var(--spreadsheet-toolbar-background);
+    border: 1px solid var(--spreadsheet-toolbar-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px var(--spreadsheet-shadow);
+    backdrop-filter: blur(10px);
+    font-family: var(--lumo-font-family);
+}
+
+.spreadsheet-action-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+    transparent,
+    var(--spreadsheet-button-glow),
+    transparent);
+    opacity: 0.5;
+}
+
+/* Cyberpunk Ribbon Sections */
+.spreadsheet-ribbon-section {
+    border-right: 1px solid var(--spreadsheet-section-border);
+    padding-right: 16px;
+    margin-right: 16px;
+    position: relative;
+}
+
+.spreadsheet-ribbon-section::after {
+    content: '';
+    position: absolute;
+    top: 20%;
+    right: -1px;
+    height: 60%;
+    width: 1px;
+    background: linear-gradient(180deg,
+    transparent,
+    var(--spreadsheet-button-glow),
+    transparent);
+    opacity: 0.3;
+}
+
+.spreadsheet-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--spreadsheet-section-title-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-shadow: 0 0 5px var(--spreadsheet-button-glow);
+    font-family: var(--lumo-font-family);
+}
+
+/* Cyberpunk Spreadsheet Buttons */
+.spreadsheet-button {
+    background: linear-gradient(135deg,
+    var(--spreadsheet-button-background),
+    var(--lumo-base-secondary-color));
+    color: var(--spreadsheet-button-color);
+    border: 1px solid var(--spreadsheet-button-border);
+    transition: all 0.3s ease;
+    font-family: var(--lumo-font-family);
+    text-shadow: 0 0 3px var(--spreadsheet-button-glow);
+    position: relative;
+    overflow: hidden;
+}
+
+.spreadsheet-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 255, 255, 0.1),
+    transparent);
+    transition: left 0.5s ease;
+}
+
+.spreadsheet-button:hover {
+    background: linear-gradient(135deg,
+    var(--spreadsheet-button-hover-background),
+    #cc0066);
+    border-color: var(--spreadsheet-button-hover-border);
+    color: #ffffff;
+    box-shadow:
+            0 4px 15px var(--spreadsheet-shadow),
+            inset 0 0 20px rgba(0, 255, 255, 0.1);
+    transform: translateY(-2px);
+    text-shadow: 0 0 8px #ffffff;
+}
+
+.spreadsheet-button:hover::before {
+    left: 100%;
+}
+
+.spreadsheet-button:active {
+    background: var(--spreadsheet-button-active-background);
+    border-color: var(--spreadsheet-button-active-background);
+    color: var(--spreadsheet-button-active-color);
+    transform: translateY(0);
+    box-shadow:
+            0 2px 8px var(--spreadsheet-shadow),
+            inset 0 0 10px rgba(0, 0, 0, 0.2);
+    text-shadow: none;
+}
+
+/* Icon styling within buttons */
+.spreadsheet-button vaadin-icon {
+    color: inherit;
+    filter: drop-shadow(0 0 3px currentColor);
+}
+
+.spreadsheet-button:hover vaadin-icon {
+    filter: drop-shadow(0 0 8px currentColor);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Special effects for different button types */
+.spreadsheet-button[data-action="save"] {
+    border-color: var(--vaadin-notification-card-bgColor-success);
+}
+
+.spreadsheet-button[data-action="save"]:hover {
+    background: linear-gradient(135deg,
+    var(--vaadin-notification-card-bgColor-success),
+    #00cc00);
+    box-shadow: 0 4px 15px rgba(0, 255, 0, 0.4);
+}
+
+.spreadsheet-button[data-action="export"] {
+    border-color: var(--lumo-primary-color);
+}
+
+.spreadsheet-button[data-action="export"]:hover {
+    background: linear-gradient(135deg,
+    var(--lumo-primary-color),
+    #cc0066);
+    box-shadow: 0 4px 15px rgba(255, 0, 128, 0.4);
+}
+
+.spreadsheet-button[data-action="import"] {
+    border-color: var(--vaadin-notification-card-bgColor-warning);
+}
+
+.spreadsheet-button[data-action="import"]:hover {
+    background: linear-gradient(135deg,
+    var(--vaadin-notification-card-bgColor-warning),
+    #cccc00);
+    box-shadow: 0 4px 15px rgba(255, 255, 0, 0.4);
+    color: #000000;
+    text-shadow: 0 0 5px #000000;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .spreadsheet-action-panel {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .spreadsheet-ribbon-section {
+        border-right: none;
+        border-bottom: 1px solid var(--spreadsheet-section-border);
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+
+    .spreadsheet-button {
+        font-size: 11px;
+        padding: 6px 10px;
+        min-width: 70px;
+    }
 }
