@@ -51,6 +51,12 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         infoTextArea.setVisible(false);
     }
 
+    @Override
+    public void setParameter(BeforeEvent event, String s) {
+        String spreadsheetName = event.getRouteParameters().get("___url_parameter").orElse(UUID.randomUUID().toString());
+        init(spreadsheetName);
+    }
+
     private List<SpreadsheetRow> getSpreadsheetRows(String body) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
@@ -290,12 +296,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     public void onColumnResize(String columnNumber, int width) {
         int col = Integer.parseInt(columnNumber);
         spreadsheet.getColumnWidths().put(col, width);
-    }
-
-    @Override
-    public void setParameter(BeforeEvent event, String s) {
-        String spreadsheetName = event.getRouteParameters().get("___url_parameter").orElse(UUID.randomUUID().toString());
-        init(spreadsheetName);
     }
 
     private void init(String spreadsheetName) {
