@@ -1,6 +1,6 @@
 package com.bervan.spreadsheet.view;
 
-import com.bervan.common.AbstractBervanTableView;
+import com.bervan.common.view.AbstractBervanTableView;
 import com.bervan.common.service.BaseService;
 import com.bervan.core.model.BervanLogger;
 import com.bervan.spreadsheet.model.Spreadsheet;

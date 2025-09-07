@@ -1,6 +1,6 @@
 package com.bervan.spreadsheet.view;
 
-import com.bervan.common.AbstractPageView;
+import com.bervan.common.view.AbstractPageView;
 import com.bervan.spreadsheet.functions.CellReferenceArgument;
 import com.bervan.spreadsheet.functions.FunctionArgument;
 import com.bervan.spreadsheet.model.Spreadsheet;
