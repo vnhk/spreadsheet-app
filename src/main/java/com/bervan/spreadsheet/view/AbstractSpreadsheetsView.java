@@ -1,5 +1,6 @@
 package com.bervan.spreadsheet.view;
 
+import com.bervan.common.config.BervanViewConfig;
 import com.bervan.common.service.BaseService;
 import com.bervan.common.view.AbstractBervanTableView;
 import com.bervan.core.model.BervanLogger;
@@ -10,15 +11,13 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 
-import java.util.HashMap;
 import java.util.UUID;
-
 
 public abstract class AbstractSpreadsheetsView extends AbstractBervanTableView<UUID, Spreadsheet> {
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets";
 
-    public AbstractSpreadsheetsView(BaseService<UUID, Spreadsheet> service, BervanLogger log) {
-        super(new SpreadsheetPageLayout(false, null, AbstractSpreadsheetsView.ROUTE_NAME), service, log, Spreadsheet.class);
+    public AbstractSpreadsheetsView(BaseService<UUID, Spreadsheet> service, BervanLogger log, BervanViewConfig bervanViewConfig) {
+        super(new SpreadsheetPageLayout(false, null, AbstractSpreadsheetsView.ROUTE_NAME), service, log, bervanViewConfig, Spreadsheet.class);
         renderCommonComponents();
     }
 

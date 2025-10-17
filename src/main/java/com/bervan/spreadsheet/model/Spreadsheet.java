@@ -2,7 +2,6 @@ package com.bervan.spreadsheet.model;
 
 import com.bervan.common.model.BervanBaseEntity;
 import com.bervan.common.model.PersistableTableData;
-import com.bervan.common.model.VaadinBervanColumn;
 import com.bervan.history.model.HistoryCollection;
 import com.bervan.history.model.HistorySupported;
 import jakarta.persistence.*;
@@ -10,16 +9,13 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
-
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @HistorySupported
 public class Spreadsheet extends BervanBaseEntity<UUID> implements PersistableTableData<UUID> {
     @Id
     private UUID id;
-    @VaadinBervanColumn(internalName = "name", displayName = "Name")
     private String name;
-    @VaadinBervanColumn(internalName = "description", displayName = "Description")
     private String description;
     @Column(columnDefinition = "LONGTEXT")
     private String body;
