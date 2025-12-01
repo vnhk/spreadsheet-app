@@ -5,6 +5,7 @@ import com.bervan.common.search.SearchService;
 import com.bervan.common.search.model.Operator;
 import com.bervan.common.search.model.SearchOperation;
 import com.bervan.common.service.BaseService;
+import com.bervan.logging.JsonLogger;
 import com.bervan.spreadsheet.functions.CellReferenceArgument;
 import com.bervan.spreadsheet.functions.FormulaParser;
 import com.bervan.spreadsheet.functions.FunctionArgument;
@@ -13,15 +14,14 @@ import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import jakarta.validation.constraints.NotNull;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
-@Slf4j
 public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
     private final FormulaParser formulaParser;
 
     public SpreadsheetService(SpreadsheetRepository repository, SearchService searchService, FormulaParser formulaParser) {

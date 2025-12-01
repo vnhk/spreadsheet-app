@@ -1,6 +1,6 @@
 package com.bervan.spreadsheet.functions;
 
-import lombok.extern.slf4j.Slf4j;
+import com.bervan.logging.JsonLogger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,9 +12,9 @@ import java.util.List;
 import static com.bervan.spreadsheet.functions.CurrencyFunction.FUNCTION_NAME;
 
 @Component("F#" + FUNCTION_NAME)
-@Slf4j
 public class CurrencyFunction implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "CURRENCY";
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
 
     @Override
     public FunctionArgument calculate(List<FunctionArgument> functionArguments) {

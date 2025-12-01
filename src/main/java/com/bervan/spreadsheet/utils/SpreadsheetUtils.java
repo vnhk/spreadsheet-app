@@ -1,13 +1,13 @@
 package com.bervan.spreadsheet.utils;
 
 import com.bervan.common.model.UtilsMessage;
+import com.bervan.logging.JsonLogger;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
-@Slf4j
 public class SpreadsheetUtils {
+    private static final JsonLogger log = JsonLogger.getLogger(SpreadsheetUtils.class);
 
     //does sort columns make sense? What if we sort cells that are used somewhere in a formula? should we update it or not?
 

@@ -1,10 +1,10 @@
 package com.bervan.spreadsheet.functions;
 
-import lombok.extern.slf4j.Slf4j;
+import com.bervan.logging.JsonLogger;
 
-@Slf4j
 public class ConstantArgument implements FunctionArgument {
     private final Object value;
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
 
     public ConstantArgument(Object value) {
         this.value = value;

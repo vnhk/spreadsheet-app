@@ -1,16 +1,16 @@
 package com.bervan.spreadsheet.functions;
 
+import com.bervan.logging.JsonLogger;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
-@Slf4j
 public class DefaultCellResolver implements CellResolver {
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
 
     public DefaultCellResolver() {
 

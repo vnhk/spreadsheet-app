@@ -1,12 +1,12 @@
 package com.bervan.spreadsheet.model;
 
+import com.bervan.logging.JsonLogger;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 @Getter
-@Slf4j
 public class SpreadsheetCell {
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
     private String cellId;
     private int rowNumber;
     private int columnNumber;

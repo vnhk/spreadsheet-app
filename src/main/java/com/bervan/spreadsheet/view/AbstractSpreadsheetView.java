@@ -1,6 +1,7 @@
 package com.bervan.spreadsheet.view;
 
 import com.bervan.common.view.AbstractPageView;
+import com.bervan.logging.JsonLogger;
 import com.bervan.spreadsheet.functions.CellReferenceArgument;
 import com.bervan.spreadsheet.functions.FunctionArgument;
 import com.bervan.spreadsheet.model.Spreadsheet;
@@ -30,16 +31,16 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
-@JsModule("./spreadsheet-context-menu.js")
 @CssImport("./spreadsheet.css")
+@JsModule("./spreadsheet-context-menu.js")
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
+
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
     private final SpreadsheetService spreadsheetService;
     private Spreadsheet spreadsheet;
     private TextArea infoTextArea = new TextArea("");
@@ -480,7 +481,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private void styleSpreadsheetButton(Button button, Icon icon, String tooltip) {
         button.setIcon(icon);
         button.addClassName("spreadsheet-button");
-        
+
         button.getStyle()
                 .set("border-radius", "4px")
                 .set("font-size", "12px")

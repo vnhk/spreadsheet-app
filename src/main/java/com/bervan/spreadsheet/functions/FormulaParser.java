@@ -1,17 +1,17 @@
 package com.bervan.spreadsheet.functions;
 
+import com.bervan.logging.JsonLogger;
 import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-@Slf4j
 public class FormulaParser {
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
     private final CellResolver cellResolver;
     private final FunctionRegistry functionRegistry;
 

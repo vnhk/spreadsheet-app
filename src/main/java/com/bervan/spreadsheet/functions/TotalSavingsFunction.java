@@ -1,6 +1,6 @@
 package com.bervan.spreadsheet.functions;
 
-import lombok.extern.slf4j.Slf4j;
+import com.bervan.logging.JsonLogger;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -8,9 +8,9 @@ import java.util.List;
 import static com.bervan.spreadsheet.functions.TotalSavingsFunction.FUNCTION_NAME;
 
 @Component("F#" + FUNCTION_NAME)
-@Slf4j
 public class TotalSavingsFunction implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "TOTAL_SAVINGS";
+    private final JsonLogger log = JsonLogger.getLogger(getClass());
 
     private double calculateTotalSavings(double initialCapital, double interestRate, double years) {
         return initialCapital * Math.pow(1 + interestRate, years);
