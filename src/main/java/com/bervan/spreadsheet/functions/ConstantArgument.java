@@ -4,7 +4,7 @@ import com.bervan.logging.JsonLogger;
 
 public class ConstantArgument implements FunctionArgument {
     private final Object value;
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
 
     public ConstantArgument(Object value) {
         this.value = value;

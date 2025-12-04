@@ -10,7 +10,7 @@ import java.util.List;
 
 @Component
 public class DefaultCellResolver implements CellResolver {
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
 
     public DefaultCellResolver() {
 

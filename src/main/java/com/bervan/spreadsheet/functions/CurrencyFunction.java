@@ -14,7 +14,7 @@ import static com.bervan.spreadsheet.functions.CurrencyFunction.FUNCTION_NAME;
 @Component("F#" + FUNCTION_NAME)
 public class CurrencyFunction implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "CURRENCY";
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
 
     @Override
     public FunctionArgument calculate(List<FunctionArgument> functionArguments) {

@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
 
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
     private final SpreadsheetService spreadsheetService;
     private Spreadsheet spreadsheet;
     private TextArea infoTextArea = new TextArea("");

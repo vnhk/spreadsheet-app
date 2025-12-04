@@ -21,7 +21,7 @@ import java.util.*;
 
 @Service
 public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
     private final FormulaParser formulaParser;
 
     public SpreadsheetService(SpreadsheetRepository repository, SearchService searchService, FormulaParser formulaParser) {

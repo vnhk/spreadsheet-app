@@ -10,7 +10,7 @@ import static com.bervan.spreadsheet.functions.TotalSavingsFunction.FUNCTION_NAM
 @Component("F#" + FUNCTION_NAME)
 public class TotalSavingsFunction implements SpreadsheetFunction {
     public final static String FUNCTION_NAME = "TOTAL_SAVINGS";
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
 
     private double calculateTotalSavings(double initialCapital, double interestRate, double years) {
         return initialCapital * Math.pow(1 + interestRate, years);

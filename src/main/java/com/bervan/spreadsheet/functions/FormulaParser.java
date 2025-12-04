@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class FormulaParser {
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
     private final CellResolver cellResolver;
     private final FunctionRegistry functionRegistry;
 

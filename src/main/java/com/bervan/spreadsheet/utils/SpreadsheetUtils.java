@@ -7,7 +7,7 @@ import com.bervan.spreadsheet.model.SpreadsheetRow;
 import java.util.List;
 
 public class SpreadsheetUtils {
-    private static final JsonLogger log = JsonLogger.getLogger(SpreadsheetUtils.class);
+    private static final JsonLogger log = JsonLogger.getLogger(SpreadsheetUtils.class, "spreadsheets");
 
     //does sort columns make sense? What if we sort cells that are used somewhere in a formula? should we update it or not?
 

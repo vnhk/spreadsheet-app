@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 public class SpreadsheetCell {
-    private final JsonLogger log = JsonLogger.getLogger(getClass());
+    private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
     private String cellId;
     private int rowNumber;
     private int columnNumber;
