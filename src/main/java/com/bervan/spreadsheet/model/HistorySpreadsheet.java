@@ -1,6 +1,6 @@
 package com.bervan.spreadsheet.model;
 
-import com.bervan.common.model.BervanHistoryEntity;
+import com.bervan.common.model.BervanHistoryOwnedEntity;
 import com.bervan.history.model.HistoryField;
 import com.bervan.history.model.HistoryOwnerEntity;
 import com.bervan.history.model.HistorySupported;
@@ -13,7 +13,7 @@ import java.util.UUID;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @HistorySupported
-public class HistorySpreadsheet extends BervanHistoryEntity<UUID> {
+public class HistorySpreadsheet extends BervanHistoryOwnedEntity<UUID> {
     @Id
     private UUID id;
     @HistoryField
