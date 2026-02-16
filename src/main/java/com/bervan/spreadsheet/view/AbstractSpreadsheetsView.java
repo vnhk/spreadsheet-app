@@ -6,9 +6,7 @@ import com.bervan.common.view.AbstractBervanTableView;
 import com.bervan.spreadsheet.model.Spreadsheet;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 
 import java.util.UUID;
 
@@ -25,17 +23,12 @@ public abstract class AbstractSpreadsheetsView extends AbstractBervanTableView<U
         Grid<Spreadsheet> grid = new Grid<>(Spreadsheet.class, false);
         buildGridAutomatically(grid);
 
-        return grid;
-    }
+        if (grid.getColumnByKey("name") != null) {
+            grid.getColumnByKey("name").setRenderer(new ComponentRenderer<>(
+                    entity -> new Anchor(ROUTE_NAME + "/" + entity.getName(), entity.getName())
+            ));
+        }
 
-    @Override
-    protected void preColumnAutoCreation(Grid<Spreadsheet> grid) {
-        grid.addComponentColumn(entity -> {
-                    Icon linkIcon = new Icon(VaadinIcon.LINK);
-                    linkIcon.getStyle().set("cursor", "pointer");
-                    return new Anchor(ROUTE_NAME + "/" + entity.getName(), new HorizontalLayout(linkIcon));
-                }).setKey("link")
-                .setWidth("6px")
-                .setResizable(false);
+        return grid;
     }
 }
