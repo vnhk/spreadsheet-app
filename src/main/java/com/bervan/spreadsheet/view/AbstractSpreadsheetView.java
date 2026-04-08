@@ -404,7 +404,8 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         Button addColumnBtn = new Button("Add Column");
         addColumnBtn.addClickListener(event -> {
             addColumn(rows);
-            showPrimaryNotification("Column " + SpreadsheetUtils.getColumnHeader(rows.get(0).getCells().size() + 1) + " added");
+            int newColCount = rows.isEmpty() ? 1 : rows.get(0).getCells().size();
+            showPrimaryNotification("Column " + SpreadsheetUtils.getColumnHeader(newColCount) + " added");
         });
 
         styleSpreadsheetButton(addColumnBtn, VaadinIcon.PLUS_CIRCLE.create(), "Add a new column to the spreadsheet");

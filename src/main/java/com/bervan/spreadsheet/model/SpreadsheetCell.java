@@ -2,10 +2,12 @@ package com.bervan.spreadsheet.model;
 
 import com.bervan.logging.JsonLogger;
 import com.bervan.spreadsheet.utils.SpreadsheetUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 @Getter
 public class SpreadsheetCell {
+    @JsonIgnore
     private final JsonLogger log = JsonLogger.getLogger(getClass(), "spreadsheets");
     private String cellId;
     private int rowNumber;
