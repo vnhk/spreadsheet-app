@@ -537,7 +537,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             String columnWidthBody = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(spreadsheet.getColumnWidths());
             spreadsheet.setColumnsWidthsBody(columnWidthBody);
 
-            spreadsheetService.save(spreadsheet);
+            spreadsheet = spreadsheetService.save(spreadsheet);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
