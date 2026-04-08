@@ -257,7 +257,9 @@ public class HtmlSpreadsheet extends Div {
                             });
                             div.addEventListener('blur', function() {
                                 const newValue = div.textContent;
-                                if (newValue !== div.dataset.value && newValue !== div.dataset.formula) {
+                                const hasFormula = div.dataset.formula !== '';
+                                const unchanged = newValue === div.dataset.value || (hasFormula && newValue === div.dataset.formula);
+                                if (!unchanged) {
                                     $0.$server.onCellEdit(div.dataset.cellId, newValue);
                                 } else {
                                     div.textContent = div.dataset.value;
