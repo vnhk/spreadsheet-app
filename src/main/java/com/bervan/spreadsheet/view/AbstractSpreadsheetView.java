@@ -90,7 +90,15 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         SpreadsheetCell cell = SpreadsheetService.findCellById(spreadsheet.getRows(), cellId);
         if (cell != null) {
             cell.setNewValueAndCellRelatedFields(value);
-            if (value != null && value.startsWith("=")) {
+            boolean cellUsedInFormula = spreadsheet.getRows().stream()
+                    .flatMap(r -> r.getCells().stream())
+                    .filter(SpreadsheetCell::hasFormula)
+                    .anyMatch(formulaCell -> spreadsheetService.getFunctionArguments(spreadsheet.getRows(), formulaCell.getFormula())
+                            .stream()
+                            .filter(arg -> arg instanceof CellReferenceArgument)
+                            .map(arg -> ((CellReferenceArgument) arg).getCell().getCellId())
+                            .anyMatch(cellId::equals));
+            if (cellUsedInFormula) {
                 refreshView(spreadsheet.getRows());
             }
         }

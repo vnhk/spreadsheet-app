@@ -47,6 +47,8 @@ public class SpreadsheetCell {
 
         if (cellType == CellType.FORMULA) {
             formula = value.toString();
+        } else {
+            formula = null;
         }
     }
 
