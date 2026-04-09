@@ -214,6 +214,9 @@ public class SpreadsheetService extends BaseService<UUID, Spreadsheet> {
         }
 
         //update rows with new row
+        if (rows.isEmpty()) {
+            return;
+        }
         List<SpreadsheetCell> cells = rows.get(0).getCells();
         SpreadsheetRow newRow = new SpreadsheetRow();
         if (addRowBelow) {

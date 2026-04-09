@@ -90,7 +90,6 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         SpreadsheetCell cell = SpreadsheetService.findCellById(spreadsheet.getRows(), cellId);
         if (cell != null) {
             cell.setNewValueAndCellRelatedFields(value);
-            refreshView(spreadsheet.getRows());
         }
     }
 
@@ -415,6 +414,21 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
     private Button getSaveOptButton() {
         Button saveBtn = new Button("Save");
         saveBtn.addClickListener(event -> {
+            try {
+                ObjectMapper validationMapper = new ObjectMapper();
+                validationMapper.findAndRegisterModules();
+                String jsonPreview = validationMapper.writerWithDefaultPrettyPrinter().writeValueAsString(spreadsheet.getRows());
+                List<?> parsed = validationMapper.readValue(jsonPreview, List.class);
+                if (parsed.isEmpty()) {
+                    showErrorNotification("Cannot save: spreadsheet data is empty. Check your data before saving.");
+                    return;
+                }
+            } catch (Exception e) {
+                showErrorNotification("Cannot save: data is invalid and cannot be parsed. Aborting save.");
+                return;
+            }
+
+
             save();
             showPrimaryNotification("Spreadsheet saved successfully");
         });
@@ -538,7 +552,11 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
             String columnWidthBody = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(spreadsheet.getColumnWidths());
             spreadsheet.setColumnsWidthsBody(columnWidthBody);
 
+            List<SpreadsheetRow> currentRows = spreadsheet.getRows();
+            Map<Integer, Integer> currentColumnWidths = spreadsheet.getColumnWidths();
             spreadsheet = spreadsheetService.save(spreadsheet);
+            spreadsheet.setRows(currentRows);
+            spreadsheet.setColumnWidths(currentColumnWidths);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
