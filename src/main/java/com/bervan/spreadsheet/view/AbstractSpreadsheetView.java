@@ -90,6 +90,9 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
         SpreadsheetCell cell = SpreadsheetService.findCellById(spreadsheet.getRows(), cellId);
         if (cell != null) {
             cell.setNewValueAndCellRelatedFields(value);
+            if (value != null && value.startsWith("=")) {
+                refreshView(spreadsheet.getRows());
+            }
         }
     }
 
@@ -423,6 +426,7 @@ public abstract class AbstractSpreadsheetView extends AbstractPageView implement
                     showErrorNotification("Cannot save: spreadsheet data is empty. Check your data before saving.");
                     return;
                 }
+
             } catch (Exception e) {
                 showErrorNotification("Cannot save: data is invalid and cannot be parsed. Aborting save.");
                 return;
