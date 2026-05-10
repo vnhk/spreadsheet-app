@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface SpreadsheetRepository extends BaseRepository<Spreadsheet, UUID> {
     List<Spreadsheet> findByNameAndDeletedFalseAndOwnersId(String name, UUID ownerId);
+    List<Spreadsheet> findByDeletedFalseAndOwnersId(UUID ownerId);
 }
