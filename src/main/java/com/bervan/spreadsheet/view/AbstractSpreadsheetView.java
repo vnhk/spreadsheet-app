@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 @CssImport("./spreadsheet.css")
 @JsModule("./spreadsheet-context-menu.js")
+@Deprecated
 public abstract class AbstractSpreadsheetView extends AbstractPageView implements HasUrlParameter<String> {
 
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets/";

@@ -1,118 +1,91 @@
 package com.bervan.spreadsheet.api;
 
-import com.bervan.common.service.AuthService;
+import com.bervan.common.config.EntityConfigValidator;
+import com.bervan.common.controller.BaseOwnedController;
+import com.bervan.common.mapper.BervanDTOMapper;
 import com.bervan.spreadsheet.model.Spreadsheet;
-import com.bervan.spreadsheet.model.SpreadsheetCell;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
-import com.bervan.spreadsheet.service.SpreadsheetRepository;
-import com.bervan.spreadsheet.service.SpreadsheetRowConverter;
 import com.bervan.spreadsheet.service.SpreadsheetService;
-import com.google.common.reflect.TypeToken;
-import com.nimbusds.jose.shaded.gson.Gson;
-import com.nimbusds.jose.shaded.gson.GsonBuilder;
 import jakarta.annotation.security.RolesAllowed;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/spreadsheet")
 @RolesAllowed("USER")
-public class SpreadsheetRestController {
+public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, UUID> {
 
     private final SpreadsheetService spreadsheetService;
-    private final SpreadsheetRepository spreadsheetRepository;
-    private static final Gson gson = new GsonBuilder().create();
 
     public SpreadsheetRestController(SpreadsheetService spreadsheetService,
-                                     SpreadsheetRepository spreadsheetRepository) {
+                                     BervanDTOMapper mapper,
+                                     EntityConfigValidator validator) {
+        super(spreadsheetService, mapper, validator, "Spreadsheet");
         this.spreadsheetService = spreadsheetService;
-        this.spreadsheetRepository = spreadsheetRepository;
-    }
-
-    private Optional<Spreadsheet> findOwned(UUID id) {
-        UUID userId = AuthService.getLoggedUserId();
-        return spreadsheetRepository.findByDeletedFalseAndOwnersId(userId).stream()
-                .filter(s -> s.getId().equals(id))
-                .findFirst();
-    }
-
-    private List<SpreadsheetRow> parseAndEvaluate(String body) {
-        List<SpreadsheetRow> rows = SpreadsheetRowConverter.deserializeSpreadsheetBody(body);
-        if (rows != null) {
-            spreadsheetService.evaluateAllFormulas(rows);
-        }
-        return rows != null ? rows : new ArrayList<>();
-    }
-
-    private Map<Integer, Integer> parseColumnWidths(String columnWidthsBody) {
-        if (columnWidthsBody == null || columnWidthsBody.isBlank()) return new HashMap<>();
-        try {
-            TypeToken<Map<Integer, Integer>> tt = new TypeToken<>() {};
-            return gson.fromJson(columnWidthsBody, tt.getType());
-        } catch (Exception ignored) {
-            return new HashMap<>();
-        }
     }
 
     @GetMapping
-    public ResponseEntity<List<SpreadsheetDto>> list() {
-        UUID userId = AuthService.getLoggedUserId();
-        List<SpreadsheetDto> dtos = spreadsheetRepository.findByDeletedFalseAndOwnersId(userId).stream()
-                .map(s -> new SpreadsheetDto(s.getId(), s.getName(), s.getDescription(), s.getModificationDate()))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<Page<SpreadsheetDto>> list(
+            @RequestParam MultiValueMap<String, String> allParams,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return super.search(allParams, page, size, SpreadsheetDto.class, Spreadsheet.class);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SpreadsheetDto> getById(@PathVariable UUID id) {
+        return super.getById(id, SpreadsheetDto.class);
     }
 
     @PostMapping
-    public ResponseEntity<SpreadsheetDto> create(@RequestBody CreateSpreadsheetRequest req) {
-        Spreadsheet s = new Spreadsheet(req.getName());
-        s.setId(UUID.randomUUID());
-        s.setDescription(req.getDescription());
+    public ResponseEntity<?> create(@RequestBody CreateSpreadsheetRequest req) {
+        // initialise with default 10x5 grid before delegating to base
         List<SpreadsheetRow> rows = new ArrayList<>();
         for (int r = 1; r <= 10; r++) {
-            SpreadsheetRow row = new SpreadsheetRow(r);
+            com.bervan.spreadsheet.model.SpreadsheetRow row = new com.bervan.spreadsheet.model.SpreadsheetRow(r);
             for (int c = 1; c <= 5; c++) {
-                row.addCell(new SpreadsheetCell(r, c, ""));
+                row.addCell(new com.bervan.spreadsheet.model.SpreadsheetCell(r, c, ""));
             }
             rows.add(row);
         }
-        s.setBody(SpreadsheetRowConverter.serializeSpreadsheetBody(rows));
-        s.setModificationDate(LocalDateTime.now());
-        Spreadsheet saved = spreadsheetService.save(s);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new SpreadsheetDto(saved.getId(), saved.getName(), saved.getDescription(), saved.getModificationDate()));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        return findOwned(id)
-                .map(s -> { spreadsheetService.delete(s); return ResponseEntity.<Void>noContent().build(); })
-                .orElse(ResponseEntity.notFound().build());
+        req.setId(null); // ensure base generates a new id
+        ResponseEntity<?> res = super.create(req, SpreadsheetDto.class);
+        // after base saves, persist the default body
+        if (res.getStatusCode().is2xxSuccessful() && res.getBody() instanceof SpreadsheetDto dto) {
+            spreadsheetService.loadById(dto.getId()).ifPresent(s -> {
+                s.setBody(com.bervan.spreadsheet.service.SpreadsheetRowConverter.serializeSpreadsheetBody(rows));
+                spreadsheetService.save(s);
+            });
+        }
+        return res;
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SpreadsheetDto> updateMeta(@PathVariable UUID id,
-                                                      @RequestBody CreateSpreadsheetRequest req) {
-        return findOwned(id).map(s -> {
-            if (req.getName() != null) s.setName(req.getName());
-            if (req.getDescription() != null) s.setDescription(req.getDescription());
-            s.setModificationDate(LocalDateTime.now());
-            Spreadsheet saved = spreadsheetService.save(s);
-            return ResponseEntity.ok(new SpreadsheetDto(saved.getId(), saved.getName(), saved.getDescription(), saved.getModificationDate()));
-        }).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> updateMeta(@PathVariable UUID id, @RequestBody CreateSpreadsheetRequest req) {
+        req.setId(id);
+        return super.update(req);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable UUID id) {
+        return super.delete(id);
+    }
+
+    // ── Spreadsheet-specific endpoints ──────────────────────────────────────
 
     @GetMapping("/{id}/data")
     public ResponseEntity<SpreadsheetDataDto> getData(@PathVariable UUID id) {
-        return findOwned(id).map(s -> {
+        return spreadsheetService.loadById(id).map(s -> {
             List<SpreadsheetRow> rows = new ArrayList<>();
             if (s.getBody() != null && !s.getBody().isBlank()) {
-                List<SpreadsheetRow> parsed = SpreadsheetRowConverter.deserializeSpreadsheetBody(s.getBody());
+                List<SpreadsheetRow> parsed = com.bervan.spreadsheet.service.SpreadsheetRowConverter.deserializeSpreadsheetBody(s.getBody());
                 if (parsed != null) {
                     rows = parsed;
                     spreadsheetService.evaluateAllFormulas(rows);
@@ -126,10 +99,10 @@ public class SpreadsheetRestController {
     @PutMapping("/{id}/data")
     public ResponseEntity<SpreadsheetDataDto> saveData(@PathVariable UUID id,
                                                         @RequestBody SaveDataRequest req) {
-        return findOwned(id).map(s -> {
+        return spreadsheetService.loadById(id).map(s -> {
             if (req.getBody() != null) s.setBody(req.getBody());
             if (req.getColumnWidthsBody() != null) s.setColumnsWidthsBody(req.getColumnWidthsBody());
-            s.setModificationDate(LocalDateTime.now());
+            s.setModificationDate(java.time.LocalDateTime.now());
             spreadsheetService.save(s);
             List<SpreadsheetRow> rows = parseAndEvaluate(s.getBody());
             Map<Integer, Integer> widths = parseColumnWidths(req.getColumnWidthsBody());
@@ -140,17 +113,16 @@ public class SpreadsheetRestController {
     @PostMapping("/{id}/evaluate")
     public ResponseEntity<List<SpreadsheetRow>> evaluate(@PathVariable UUID id,
                                                           @RequestBody EvaluateRequest req) {
-        if (findOwned(id).isEmpty()) return ResponseEntity.notFound().build();
+        if (spreadsheetService.loadById(id).isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(parseAndEvaluate(req.getBody()));
     }
 
     @PostMapping("/{id}/row")
     public ResponseEntity<List<SpreadsheetRow>> rowOperation(@PathVariable UUID id,
                                                                @RequestBody RowOperationRequest req) {
-        if (findOwned(id).isEmpty()) return ResponseEntity.notFound().build();
-        List<SpreadsheetRow> rows = SpreadsheetRowConverter.deserializeSpreadsheetBody(req.getBody());
+        if (spreadsheetService.loadById(id).isEmpty()) return ResponseEntity.notFound().build();
+        List<SpreadsheetRow> rows = com.bervan.spreadsheet.service.SpreadsheetRowConverter.deserializeSpreadsheetBody(req.getBody());
         if (rows == null) return ResponseEntity.badRequest().build();
-
         switch (req.getAction()) {
             case "ADD_ABOVE" -> spreadsheetService.addRowAbove(rows, null, req.getRowNumber());
             case "ADD_BELOW" -> spreadsheetService.addRowBelow(rows, null, req.getRowNumber());
@@ -164,10 +136,9 @@ public class SpreadsheetRestController {
     @PostMapping("/{id}/column")
     public ResponseEntity<List<SpreadsheetRow>> columnOperation(@PathVariable UUID id,
                                                                   @RequestBody ColumnOperationRequest req) {
-        if (findOwned(id).isEmpty()) return ResponseEntity.notFound().build();
-        List<SpreadsheetRow> rows = SpreadsheetRowConverter.deserializeSpreadsheetBody(req.getBody());
+        if (spreadsheetService.loadById(id).isEmpty()) return ResponseEntity.notFound().build();
+        List<SpreadsheetRow> rows = com.bervan.spreadsheet.service.SpreadsheetRowConverter.deserializeSpreadsheetBody(req.getBody());
         if (rows == null) return ResponseEntity.badRequest().build();
-
         switch (req.getAction()) {
             case "ADD_LEFT"  -> spreadsheetService.addColumnLeft(rows, null, req.getColumnNumber());
             case "ADD_RIGHT" -> spreadsheetService.addColumnRight(rows, null, req.getColumnNumber());
@@ -176,5 +147,21 @@ public class SpreadsheetRestController {
         }
         spreadsheetService.evaluateAllFormulas(rows);
         return ResponseEntity.ok(rows);
+    }
+
+    private List<SpreadsheetRow> parseAndEvaluate(String body) {
+        List<SpreadsheetRow> rows = com.bervan.spreadsheet.service.SpreadsheetRowConverter.deserializeSpreadsheetBody(body);
+        if (rows != null) spreadsheetService.evaluateAllFormulas(rows);
+        return rows != null ? rows : new ArrayList<>();
+    }
+
+    private Map<Integer, Integer> parseColumnWidths(String body) {
+        if (body == null || body.isBlank()) return new java.util.HashMap<>();
+        try {
+            com.google.common.reflect.TypeToken<Map<Integer, Integer>> tt = new com.google.common.reflect.TypeToken<>() {};
+            return new com.nimbusds.jose.shaded.gson.GsonBuilder().create().fromJson(body, tt.getType());
+        } catch (Exception ignored) {
+            return new java.util.HashMap<>();
+        }
     }
 }

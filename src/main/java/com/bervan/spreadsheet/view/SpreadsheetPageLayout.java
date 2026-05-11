@@ -3,6 +3,7 @@ package com.bervan.spreadsheet.view;
 import com.bervan.common.MenuNavigationComponent;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
+@Deprecated
 public class SpreadsheetPageLayout extends MenuNavigationComponent {
     public SpreadsheetPageLayout(boolean isEdit, String spreadsheetName, String routeName) {
         super(routeName);

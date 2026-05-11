@@ -8,6 +8,7 @@ import com.vaadin.flow.dom.Element;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 public class HtmlSpreadsheet extends Div {
     private final Element parentElement;
     private final Map<Integer, Integer> columnWidths;

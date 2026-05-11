@@ -2,6 +2,7 @@ package com.bervan.spreadsheet.model;
 
 import com.bervan.common.model.BervanOwnedBaseEntity;
 import com.bervan.common.model.PersistableTableOwnedData;
+import com.bervan.core.model.BaseModel;
 import com.bervan.history.model.HistoryCollection;
 import com.bervan.history.model.HistorySupported;
 import jakarta.persistence.*;
@@ -12,7 +13,7 @@ import java.util.*;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @HistorySupported
-public class Spreadsheet extends BervanOwnedBaseEntity<UUID> implements PersistableTableOwnedData<UUID> {
+public class Spreadsheet extends BervanOwnedBaseEntity<UUID> implements PersistableTableOwnedData<UUID>, BaseModel<UUID> {
     @Id
     private UUID id;
     private String name;
@@ -50,6 +51,10 @@ public class Spreadsheet extends BervanOwnedBaseEntity<UUID> implements Persista
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override

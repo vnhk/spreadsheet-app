@@ -1,5 +1,8 @@
 package com.bervan.spreadsheet.api;
 
+import com.bervan.core.model.BaseDTO;
+import com.bervan.core.model.BaseModel;
+import com.bervan.spreadsheet.model.Spreadsheet;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,9 +15,14 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SpreadsheetDto {
+public class SpreadsheetDto implements BaseDTO<UUID> {
     private UUID id;
     private String name;
     private String description;
     private LocalDateTime modificationDate;
+
+    @Override
+    public Class<? extends BaseModel<UUID>> dtoTarget() {
+        return Spreadsheet.class;
+    }
 }

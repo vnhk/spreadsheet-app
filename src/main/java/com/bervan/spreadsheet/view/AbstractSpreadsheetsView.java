@@ -10,6 +10,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 
 import java.util.UUID;
 
+@Deprecated
 public abstract class AbstractSpreadsheetsView extends AbstractBervanTableView<UUID, Spreadsheet> {
     public static final String ROUTE_NAME = "/spreadsheet-app/spreadsheets";
 

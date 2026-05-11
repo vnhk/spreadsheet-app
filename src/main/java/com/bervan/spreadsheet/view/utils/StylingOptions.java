@@ -14,6 +14,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 //import java.util.Set;
 //import java.util.function.Function;
 //
+@Deprecated
 public class StylingOptions extends VerticalLayout {
 //    private MenuItem stylingMenu;
 //    private MenuItem boldMenuItem;
