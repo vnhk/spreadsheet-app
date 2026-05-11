@@ -6,6 +6,8 @@ import com.bervan.common.mapper.BervanDTOMapper;
 import com.bervan.spreadsheet.model.Spreadsheet;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -101,7 +103,7 @@ public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, 
 
     @PutMapping("/{id}/data")
     public ResponseEntity<SpreadsheetDataDto> saveData(@PathVariable UUID id,
-                                                        @RequestBody SaveDataRequest req) {
+                                                       @RequestBody SaveDataRequest req) {
         return spreadsheetService.loadById(id).map(s -> {
             if (req.getBody() != null) s.setBody(req.getBody());
             if (req.getColumnWidthsBody() != null) s.setColumnsWidthsBody(req.getColumnWidthsBody());
@@ -115,14 +117,14 @@ public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, 
 
     @PostMapping("/{id}/evaluate")
     public ResponseEntity<List<SpreadsheetRow>> evaluate(@PathVariable UUID id,
-                                                          @RequestBody EvaluateRequest req) {
+                                                         @RequestBody EvaluateRequest req) {
         if (spreadsheetService.loadById(id).isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(parseAndEvaluate(req.getBody()));
     }
 
     @PostMapping("/{id}/row")
     public ResponseEntity<List<SpreadsheetRow>> rowOperation(@PathVariable UUID id,
-                                                               @RequestBody RowOperationRequest req) {
+                                                             @RequestBody RowOperationRequest req) {
         if (spreadsheetService.loadById(id).isEmpty()) return ResponseEntity.notFound().build();
         List<SpreadsheetRow> rows = com.bervan.spreadsheet.service.SpreadsheetRowConverter.deserializeSpreadsheetBody(req.getBody());
         if (rows == null) return ResponseEntity.badRequest().build();
@@ -130,7 +132,7 @@ public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, 
             case "ADD_ABOVE" -> spreadsheetService.addRowAbove(rows, null, req.getRowNumber());
             case "ADD_BELOW" -> spreadsheetService.addRowBelow(rows, null, req.getRowNumber());
             case "DUPLICATE" -> spreadsheetService.duplicateRow(rows, req.getRowNumber());
-            case "DELETE"    -> spreadsheetService.deleteRow(rows, req.getRowNumber());
+            case "DELETE" -> spreadsheetService.deleteRow(rows, req.getRowNumber());
         }
         spreadsheetService.evaluateAllFormulas(rows);
         return ResponseEntity.ok(rows);
@@ -138,15 +140,15 @@ public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, 
 
     @PostMapping("/{id}/column")
     public ResponseEntity<List<SpreadsheetRow>> columnOperation(@PathVariable UUID id,
-                                                                  @RequestBody ColumnOperationRequest req) {
+                                                                @RequestBody ColumnOperationRequest req) {
         if (spreadsheetService.loadById(id).isEmpty()) return ResponseEntity.notFound().build();
         List<SpreadsheetRow> rows = com.bervan.spreadsheet.service.SpreadsheetRowConverter.deserializeSpreadsheetBody(req.getBody());
         if (rows == null) return ResponseEntity.badRequest().build();
         switch (req.getAction()) {
-            case "ADD_LEFT"  -> spreadsheetService.addColumnLeft(rows, null, req.getColumnNumber());
+            case "ADD_LEFT" -> spreadsheetService.addColumnLeft(rows, null, req.getColumnNumber());
             case "ADD_RIGHT" -> spreadsheetService.addColumnRight(rows, null, req.getColumnNumber());
             case "DUPLICATE" -> spreadsheetService.duplicateColumn(rows, req.getColumnNumber());
-            case "DELETE"    -> spreadsheetService.deleteColumn(rows, req.getColumnNumber());
+            case "DELETE" -> spreadsheetService.deleteColumn(rows, req.getColumnNumber());
         }
         spreadsheetService.evaluateAllFormulas(rows);
         return ResponseEntity.ok(rows);
@@ -161,8 +163,9 @@ public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, 
     private Map<Integer, Integer> parseColumnWidths(String body) {
         if (body == null || body.isBlank()) return new java.util.HashMap<>();
         try {
-            com.google.common.reflect.TypeToken<Map<Integer, Integer>> tt = new com.google.common.reflect.TypeToken<>() {};
-            return new com.nimbusds.jose.shaded.gson.GsonBuilder().create().fromJson(body, tt.getType());
+            TypeToken<Map<Integer, Integer>> tt = new TypeToken<>() {
+            };
+            return new GsonBuilder().create().fromJson(body, tt.getType());
         } catch (Exception ignored) {
             return new java.util.HashMap<>();
         }

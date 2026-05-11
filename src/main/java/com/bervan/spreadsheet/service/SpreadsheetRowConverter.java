@@ -2,9 +2,9 @@ package com.bervan.spreadsheet.service;
 
 import com.bervan.spreadsheet.model.ColumnConfig;
 import com.bervan.spreadsheet.model.SpreadsheetRow;
-import com.google.common.reflect.TypeToken;
-import com.nimbusds.jose.shaded.gson.Gson;
-import com.nimbusds.jose.shaded.gson.GsonBuilder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.List;
