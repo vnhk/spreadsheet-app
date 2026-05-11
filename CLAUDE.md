@@ -3,7 +3,7 @@
 > **IMPORTANT**: Keep this file updated when making significant changes to the codebase. This file serves as persistent memory between Claude Code sessions.
 
 ## Overview
-Browser-based spreadsheet editor with formula support, row/column operations, and history tracking. Built with Spring Boot + Vaadin. Data stored as JSON in LONGTEXT columns.
+Browser-based spreadsheet editor with formula support, row/column operations, and history tracking. Built with Spring Boot (REST API). Data stored as JSON in LONGTEXT columns.
 
 ## Key Architecture
 
@@ -72,7 +72,7 @@ Browser-based spreadsheet editor with formula support, row/column operations, an
 - Toolbar sections: Edit, Data, File
 - Find & Replace dialog, Import/Export as JSON
 
-#### HtmlSpreadsheet (Custom Vaadin Component)
+#### HtmlSpreadsheet (legacy component, replaced by React SpreadsheetEditorPage)
 - Renders HTML table with column headers (A, B, C…), row numbers
 - Editable cells with right-click context menu (`spreadsheet-context-menu.js`)
 - Column resize support, cell info overlay
