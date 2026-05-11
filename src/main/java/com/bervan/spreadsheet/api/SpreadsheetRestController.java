@@ -8,6 +8,7 @@ import com.bervan.spreadsheet.model.SpreadsheetRow;
 import com.bervan.spreadsheet.service.SpreadsheetService;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -32,11 +33,12 @@ public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, 
     }
 
     @GetMapping
-    public ResponseEntity<Page<SpreadsheetDto>> list(
+    public ResponseEntity<List<SpreadsheetDto>> list(
             @RequestParam MultiValueMap<String, String> allParams,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return super.search(allParams, page, size, SpreadsheetDto.class, Spreadsheet.class);
+        Page<SpreadsheetDto> result = super.search(allParams, page, size, SpreadsheetDto.class, Spreadsheet.class).getBody();
+        return ResponseEntity.ok(result != null ? result.getContent() : List.of());
     }
 
     @GetMapping("/{id}")
@@ -57,12 +59,13 @@ public class SpreadsheetRestController extends BaseOwnedController<Spreadsheet, 
         }
         req.setId(null); // ensure base generates a new id
         ResponseEntity<?> res = super.create(req, SpreadsheetDto.class);
-        // after base saves, persist the default body
+        // after base saves, persist the default body and return 201
         if (res.getStatusCode().is2xxSuccessful() && res.getBody() instanceof SpreadsheetDto dto) {
             spreadsheetService.loadById(dto.getId()).ifPresent(s -> {
                 s.setBody(com.bervan.spreadsheet.service.SpreadsheetRowConverter.serializeSpreadsheetBody(rows));
                 spreadsheetService.save(s);
             });
+            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
         }
         return res;
     }
