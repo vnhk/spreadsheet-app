@@ -494,14 +494,30 @@ class SpreadsheetServiceTest {
         List<SpreadsheetRow> rows = new ArrayList<>();
         SpreadsheetRow row = new SpreadsheetRow(1);
         SpreadsheetCell cell1 = new SpreadsheetCell(1, 1, "=+(A2,1)");
-        SpreadsheetCell cell2 = new SpreadsheetCell(1, 2, "=+(A1,1)");
-        row.addCell(cell1, cell2);
+        SpreadsheetCell cell2 = new SpreadsheetCell(2, 1, "=+(A1,1)");
+        row.addCell(cell1);
         rows.add(row);
+        SpreadsheetRow secondRow = new SpreadsheetRow(2);
+        secondRow.addCell(cell2);
+        rows.add(secondRow);
 
         spreadsheetService.evaluateAllFormulas(rows);
 
         assertEquals("=+(A2,1)", cell1.getValue());
         assertEquals("=+(A1,1)", cell2.getValue());
+    }
+
+    @Test
+    void evaluateAllFormulas_missingReferenceIsEmptyRatherThanCircular() {
+        SpreadsheetRow row = new SpreadsheetRow(1);
+        SpreadsheetCell first = new SpreadsheetCell(1, 1, "=+(A2,1)");
+        SpreadsheetCell second = new SpreadsheetCell(1, 2, "=+(A1,1)");
+        row.addCell(first, second);
+
+        spreadsheetService.evaluateAllFormulas(List.of(row));
+
+        assertEquals(1.0, first.getValue());
+        assertEquals(2.0, second.getValue());
     }
 
     @Test

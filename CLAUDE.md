@@ -92,7 +92,8 @@ Browser-based spreadsheet editor with formula support, row/column operations, an
 2. Formula references auto-update when rows/columns are added/deleted
 3. Delete operations validate no dependent formulas before proceeding
 4. Data stored as JSON in LONGTEXT; backward compatibility for old formats
-5. `sortColumns` is not implemented (commented out)
+5. `sortColumns` sorts selected column values numerically when possible (numbers before text in ascending order), with stable ties, within an inclusive zero-based row-list index range. Unselected columns and destination cell coordinates stay fixed; moved formulas retain their original references. Invalid selections return an error without modifying cells.
 6. History tracking on all spreadsheet changes
 7. Soft deletes; multi-tenancy via `BervanOwnedBaseEntity`
 8. Tests: `SpreadsheetServiceTest`, `CellTest`, `SpreadsheetUtilsTest`
+9. The circular-reference fixture uses separate rows for A1/A2. An absent A2 resolves as an empty cell, not a circular dependency; both cases have regression coverage.

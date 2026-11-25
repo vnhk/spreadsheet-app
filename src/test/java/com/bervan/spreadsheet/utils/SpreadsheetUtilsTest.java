@@ -19,6 +19,49 @@ class SpreadsheetUtilsTest {
     }
 
     @Test
+    void sortingKeepsCellCoordinatesAndFormulaText() {
+        SpreadsheetRow first = new SpreadsheetRow(1);
+        first.addCell(new SpreadsheetCell(1, 1, "=+(C1,1)"), new SpreadsheetCell(1, 2, "20"));
+        SpreadsheetRow second = new SpreadsheetRow(2);
+        second.addCell(new SpreadsheetCell(2, 1, "=+(C2,1)"), new SpreadsheetCell(2, 2, "3"));
+        List<SpreadsheetRow> rows = List.of(first, second);
+
+        Assertions.assertTrue(SpreadsheetUtils.sortColumns(rows, "B", "Ascending", "A,B", "0:1").isSuccess);
+
+        Assertions.assertEquals("=+(C2,1)", first.getCell(0).getFormula());
+        Assertions.assertEquals("=+(C1,1)", second.getCell(0).getFormula());
+        Assertions.assertEquals("A1", first.getCell(0).getCellId());
+        Assertions.assertEquals("B2", second.getCell(1).getCellId());
+    }
+
+    @Test
+    void invalidSortDoesNotPartiallyChangeRows() {
+        List<SpreadsheetRow> rows = initializeTestCells();
+        for (String range : List.of("13:1", "0:100", "invalid")) {
+            UtilsMessage result = SpreadsheetUtils.sortColumns(rows, "B", "Ascending", "A,B", range);
+            Assertions.assertTrue(result.isError);
+            Assertions.assertFalse(result.isSuccess);
+            Assertions.assertEquals("Household Shopping", rows.get(1).getCell(0).getValue());
+        }
+        Assertions.assertTrue(SpreadsheetUtils.sortColumns(rows, "B", "Ascending", "A,Z", "1:13").isError);
+        Assertions.assertEquals("Household Shopping", rows.get(1).getCell(0).getValue());
+    }
+
+    @Test
+    void sortingMixedNumbersAndTextUsesConsistentOrdering() {
+        List<SpreadsheetRow> rows = new ArrayList<>();
+        for (String value : List.of("2", "1a", "10", "a")) {
+            SpreadsheetRow row = new SpreadsheetRow(rows.size() + 1);
+            row.addCell(new SpreadsheetCell(row.rowNumber, 1, value));
+            rows.add(row);
+        }
+
+        Assertions.assertTrue(SpreadsheetUtils.sortColumns(rows, "A", "Ascending", "A", "0:3").isSuccess);
+        Assertions.assertEquals(List.of("2", "10", "1a", "a"),
+                rows.stream().map(row -> row.getCell(0).getValue()).toList());
+    }
+
+    @Test
     void sortColumns_Ascending() {
         List<SpreadsheetRow> cells = initializeTestCells();
 
